@@ -1,0 +1,1654 @@
+function cLog(writeKey, writeValue) {
+	switch (arguments.length) {
+	case 1:
+		console.log(writeKey);
+		break;
+	default:
+		console.log(writeKey + ": " + writeValue);
+		break;
+	}
+}
+
+const backgroundImage = function (){
+	document.getElementById('backgroundImage').className = `bg${Math.floor(Math.random() * (12 - 1 + 1)) + 1}`;
+};
+
+let currentStation = 'Radio_Off';
+
+const loadYouTubeAPI = function (){
+	const iframe_api_js = document.createElement('script');
+	iframe_api_js.src = 'https://www.youtube.com/iframe_api';
+	
+	const GTRV_js = document.getElementById('GTRV_js');
+	GTRV_js.parentNode.insertBefore(iframe_api_js, GTRV_js);
+};
+
+let m;
+const monitor = function (){
+	if (stationData[currentStation].id === 'Radio_Off') {
+		stationData_name.innerHTML = stationData[currentStation].name
+		stationData_artist.innerHTML = nbsp;
+		stationData_title.innerHTML = nbsp;
+		//stationData_share.innerHTML = nbsp;
+	} else {
+		if (player.getCurrentTime) {
+			stationData_name.innerHTML = stationData[currentStation].name
+			
+			const currentTime = player.getCurrentTime()//;cLog('curentTime',currentTime);
+			
+			stationData[currentStation].currentTime = currentTime;
+			
+			stationData[currentStation].timestamps.forEach((timestamp) => {
+				if ((timestamp.start <= currentTime) && (timestamp.end > currentTime)) {
+					switch (stationData[currentStation].id) {
+						case 'Blaine_County_Radio':
+						case 'West_Coast_Talk_Radio': {
+							stationData_artist.innerHTML = timestamp.artist;
+							break;
+						}
+						default: {
+							stationData_artist.innerHTML = timestamp.artist.toUpperCase();
+						}
+					}
+					stationData_title.innerHTML = timestamp.song;
+					//stationData_share.innerHTML = nbsp;
+					return;
+				}
+			});
+		}
+	}
+}
+
+const nbsp = '&nbsp;';
+
+const onYouTubeIframeAPIReady = function() {
+	player = new window.YT.Player('player');
+	youTubeIframeAPIReady = true;
+}
+
+let radioWheel;
+
+const play = function(station){
+	if (!station.playing) {
+		stationData_name.innerHTML = nbsp;
+		stationData_artist.innerHTML = nbsp;
+		stationData_title.innerHTML = nbsp;
+		stationData_share.innerHTML = nbsp;
+		
+		if (station.id === 'Radio_Off') {
+			if (player) {
+				player.stopVideo();
+				
+				stationData_name.innerHTML = station.name
+				
+				clearInterval(m);
+			}
+		} else {
+			//const videoId = youTubeVideoId(station.link);
+			/*
+			cLog('videoId',videoId);
+			cLog('station.videoId',station.videoId);
+			cLog('videoId === station.videoId',videoId === station.videoId);
+			cLog('=============================');
+			*/
+			if (station.currentTime === null) {
+				station.currentTime = (Math.random() * station.length)
+			}
+			
+			let elapsedTime = station.exitTime;
+			if (elapsedTime > 0) {
+				elapsedTime = ((Date.now() - elapsedTime) / 1000);
+				while (elapsedTime > station.length) {
+					elapsedTime -= station.length;
+				}
+			}
+			
+			station.currentTime += elapsedTime;
+			
+			if (!player) {
+				player = new window.YT.Player("player", {
+					height: "200",
+					width: "356",
+					videoId: station.videoId,
+					playerVars: {
+						autoplay: 1,
+						controls: 0,
+						disablekb: 1,
+						enablejsapi: 1,
+						fs: 0,
+						iv_load_policy: 3,
+						loop: 1,
+						origin: window.location.href,
+						playlist: station.videoId,
+						playsinline: 1
+					},
+					events: { onReady: (event) => {
+						event.target.seekTo(station.currentTime, true);
+						event.target.playVideo();
+					}}
+				});
+			} else {
+				player.loadVideoById(station.videoId,station.currentTime);
+			}
+			m = setInterval(monitor,500);
+		}
+		
+		const previousStation = currentStation;
+		if (previousStation !== 'Radio_Off') {
+			stationData[previousStation].exitTime = Date.now();
+		}
+	}
+	
+	currentStation = station.id;
+};
+
+let player;
+
+const radioWheelBuild = function (startFrom = 2){
+	radioWheel.innerHTML = '';
+	
+	const stationCount = Object.keys(stationData).length;
+	
+	for (let stationNumber = startFrom; stationNumber < (stationCount + startFrom); stationNumber++) {
+		const s = (stationNumber <= stationCount) ? stationNumber : (stationNumber - stationCount);
+		const id = stationList[s];
+		
+		if (stationData[id].favorite) {
+			const radioStation = document.createElement('div');
+			radioStation.setAttribute('class',('radioStation' + (stationData[id].playing ? ' playing' : '')));
+			radioStation.setAttribute('id',id);
+			radioStation.setAttribute('data-station-number',s);
+			radioWheel.append(radioStation);
+			
+			radioStation.addEventListener('click', (e) => {
+				play(stationData[id]);
+			});
+			
+			const logo = document.createElement('div');
+			logo.setAttribute('class',`logo logo${stationData[id].logoNumber}`);
+			radioStation.append(logo);
+		}
+	}
+}
+
+const radioWheelConfig = function (){
+	/*
+	750/1079 - 81
+	515/1079 - 96
+	*/
+	const favoriteStationCount = (stationFavoriteList.length - 1);
+	
+	//RADIO WHEEL
+	const h = window.innerHeight;
+	const w = window.innerWidth;
+//	const radioWheelPadding = (((((h > w) ? w : h) / 100) * 35) - (stationSize / 2));
+	
+	let radioWheelPadding = ((((h > w) ? w : h) / 100) * 45);
+	radioWheelPadding -= (((radioWheelPadding * 2) * 0.110) / 2);
+	
+	radioWheel.style.padding = `${String(radioWheelPadding)}px`;
+	
+	//STATION BUTTON
+	const radioStation = document.querySelectorAll('.radioStation');
+	const radioWheelCircumference = ((radioWheel.clientWidth + Math.max(favoriteStationCount,14)) * Math.PI);
+//	stationSize = ((radioWheelCircumference / Math.min(Math.max(favoriteStationCount,14),28)) - 2);
+	
+	stationSize = ((radioWheelPadding * 2) * 0.110)
+	
+	document.documentElement.style.setProperty('--station-size',`${stationSize}px`);
+	/*
+	cLog('radioWheelCircumference',radioWheelCircumference);
+	cLog('stationSize',stationSize);
+	cLog('====================');
+	*/
+	const bottomAngle = (360 / radioStation.length * (stationFavoriteList.indexOf('Radio_Off') - 1 + (Math.max(favoriteStationCount, 14) / 4)));
+	
+	radioStation.forEach((station,index) => {
+		//SIZE
+		station.style.height = (stationSize + 'px');
+		station.style.width = (stationSize + 'px');
+		
+		//IMAGE
+		const logo = station.querySelector('.logo');
+		const logoPosition = stationData[station.id].logoPosition;
+		
+		switch (logo.className) {
+			case 'logo logo1': {
+				logo.style.backgroundSize = `${stationSize * 6}px ${(stationSize * 4) + (56 * (stationSize/128))}px`;
+				logo.style.backgroundPosition = `${stationSize * logoPosition[0] * -1}px ${stationSize * logoPosition[1] * -1}px`;
+				break;
+			}
+			case 'logo logo3': {
+				logo.style.backgroundSize = `${stationSize + 28}px ${stationSize + 28}px`;
+				logo.style.backgroundPosition = `${logoPosition[0] * -1}px ${logoPosition[1] * -1}px`;
+				break;
+			}
+			case 'logo logo4': {
+				logo.style.backgroundSize = `${stationSize + 6}px ${stationSize + 6}px`;
+				logo.style.backgroundPosition = `${logoPosition[0] * -1}px ${logoPosition[1] * -1}px`;
+				break;
+			}
+			default: {
+				logo.style.backgroundSize = `${stationSize}px ${stationSize}px`;
+			}
+		}
+		
+		//POSITION
+		const angleInDegrees = ((360 / radioStation.length * (stationFavoriteList.indexOf(station.id) - 1 + (Math.max(favoriteStationCount, 14) / 4))) - (bottomAngle - 90));
+		const angleInRadians = (angleInDegrees * (Math.PI / 180));
+		
+		station.style.left = `${(w / 2) + radioWheelPadding * Math.cos(angleInRadians) - (stationSize / 2) - ((w / 2) - radioWheelPadding)}px`;
+		station.style.top = `${(h / 2) + radioWheelPadding * Math.sin(angleInRadians) - (stationSize / 2) - ((h / 2) - radioWheelPadding)}px`;
+	});
+};
+
+const stationData = {
+	Radio_Off: {
+		'currentTime': 0,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Radio_Off',
+		'length': 0,
+		'logoNumber': '1',
+		'logoPosition': [3,3],
+		'name': 'Radio Off',
+		'playing': true,
+		'stationNumber': '1',
+		'timestamps': [
+			{ 'start': 0,    'end': 0,  'artist': nbsp, 'song': nbsp }
+		],
+		'videoId': ''
+	},
+	Media_Player: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Media_Player',
+		'length': 24959,
+		'logoNumber': '2',
+		'logoPosition': [0,0],
+		'name': 'Media Player',
+		'playing': false,
+		'stationNumber': '2',
+		'timestamps': [
+			{'start': 1,    'end': 232,  'artist': 'Seth Troxler', 'song': 'Lumartes'},
+			{'start': 233,    'end': 622,  'artist': 'Sama\' Abdulhadi', 'song': 'Reverie'},
+			{'start': 623,    'end': 1061,  'artist': 'Rampa', 'song': 'The Church'},
+			{'start': 1062,    'end': 1373,  'artist': 'Deichkind', 'song': 'Autonom (Dixon Edit)'},
+			{'start': 1374,    'end': 1760,  'artist': 'Kerri Chandler', 'song': 'You'},
+			{'start': 1761,    'end': 2045,  'artist': 'tINI feat. Amiture', 'song': 'What If, Then What?'},
+			{'start': 2046,    'end': 2482,  'artist': 'DJ Tennis', 'song': 'Atlanta'},
+			{'start': 2483,    'end': 2796,  'artist': 'Moodymann feat. CD', 'song': 'Keep on Coming'},
+			{'start': 2797,    'end': 3171,  'artist': 'Jamie Jones', 'song': 'Laser Lass'},
+			{'start': 3172,    'end': 3603,  'artist': 'Mano Le Tough', 'song': 'As If to Say'},
+			{'start': 3604,    'end': 3952,  'artist': 'Butch feat. Kemelion', 'song': 'Raindrops'},
+			{'start': 3953,    'end': 4439,  'artist': 'CARL CRAIG', 'song': 'Forever Free'},
+			{'start': 4440,    'end': 4859,  'artist': 'Margaret Dygas', 'song': 'Wishing Well'},
+			{'start': 4860,    'end': 5224,  'artist': 'Red Axes', 'song': 'Calib'},
+			{'start': 5225,    'end': 5920,  'artist': 'Luciano', 'song': 'Mantra For Lizzie'},
+			{'start': 5921,    'end': 6416,  'artist': 'Lost Souls of Saturn &amp; TOKiMONSTA', 'song': 'Revision of the Past'},
+			{'start': 6417,    'end': 6722,  'artist': 'Adam Beyer', 'song': 'Break It Up'},
+			{'start': 6723,    'end': 7044,  'artist': 'Tale of Us', 'song': 'Nova Two'},
+			{'start': 7045,    'end': 7454,  'artist': 'Bedouin', 'song': 'Up in Flames'},
+			{'start': 7455,    'end': 7883,  'artist': 'Damian Lazarus feat. Robert Owens', 'song': 'The Future'},
+			{'start': 7884,    'end': 8112,  'artist': 'CARL CRAIG', 'song': 'Forever Free (Edited)'},
+			{'start': 8113,    'end': 8380,  'artist': 'Butch feat. Kemelion', 'song': 'Raindrops (Edited)'},
+			{'start': 8381,    'end': 8492,  'artist': 'Rampa', 'song': 'The Church (Edited)'},
+			{'start': 8493,    'end': 8667,  'artist': 'Kerri Chandler/Luciano', 'song': 'You/Mantra For Lizzie'},
+			{'start': 8668,    'end': 9012,  'artist': 'Damian Lazarus/Moodymann', 'song': 'The Future/Keep On Coming'},
+			{'start': 9013,    'end': 9120,  'artist': 'Tale Of Us/Margaret Dygas', 'song': 'Nova Two/Wishing Well'},
+			{'start': 9121,    'end': 9394,  'artist': 'Mano Le Tough', 'song': 'As If to Say (Edited)'},
+			{'start': 9395,    'end': 9535,  'artist': 'Adam Beyer', 'song': 'Break It Up (Edited)'},
+			{'start': 9536,    'end': 9720,  'artist': 'Deichkind', 'song': 'Autonom (Dixon Edit)'},
+			{'start': 9721,    'end': 9798,  'artist': 'tINI feat. Amiture', 'song': 'What If, Then What? (Edited)'},
+			{'start': 9799,    'end': 10383,  'artist': 'Seth Troxler', 'song': 'Lumartes (Edited)'},
+			{'start': 10384,    'end': 10545,  'artist': 'DJ Tennis', 'song': 'Atlanta (Edited)'},
+			{'start': 10546,    'end': 10621,  'artist': 'Red Axes', 'song': 'Calib (Edited)'},
+			{'start': 10622,    'end': 10718,  'artist': 'Sama\' Abdulhadi/Jamie Jones', 'song': 'Reverie/Laser Lass'},
+			{'start': 10719,    'end': 11347,  'artist': 'Damian Lazarus feat. Robert Owens', 'song': 'The Future'},
+			{'start': 11348,    'end': 11628,  'artist': 'Bedouin', 'song': 'Up in Flames'},
+			{'start': 11629,    'end': 12154,  'artist': 'Lost Souls of Saturn &amp; TOKiMONSTA', 'song': 'Revision of the Past'},
+			{'start': 12155,    'end': 12253,  'artist': 'Thundercat', 'song': 'Them Changes'},
+			{'start': 12254,    'end': 12323,  'artist': 'Christion', 'song': 'Pimp This Love'},
+			{'start': 12324,    'end': 12503,  'artist': 'Atlanta Rhytm Section', 'song': 'So Into You'},
+			{'start': 12504,    'end': 12633,  'artist': 'Ro James', 'song': 'Ga$'},
+			{'start': 12634,    'end': 12817,  'artist': 'Claudja Barry', 'song': 'Love For Sake of Love'},
+			{'start': 12818,    'end': 12927,  'artist': 'Barbara NcNair', 'song': 'My World Is Empty Without You'},
+			{'start': 12928,    'end': 13086,  'artist': 'MFSB', 'song': 'Plenty Good Lovin\''},
+			{'start': 13087,    'end': 13274,  'artist': 'The Emotions', 'song': 'I Don\'t Wanna Lose Your Love'},
+			{'start': 13275,    'end': 13620,  'artist': 'Bell &amp; James', 'song': 'Livin\' It Up (Friday Night)'},
+			{'start': 13621,    'end': 13808,  'artist': 'Jesse Johnson/Moodymann', 'song': 'Where the Devil Plays'},
+			{'start': 13809,    'end': 14013,  'artist': 'Stavroz', 'song': 'Gold Town'},
+			{'start': 14014,    'end': 14264,  'artist': 'Larry Heard', 'song': 'Lamentation'},
+			{'start': 14265,    'end': 14602,  'artist': 'Mobb Deep', 'song': 'Cradle to the Grave'},
+			{'start': 14603,    'end': 14847,  'artist': 'Nipsey Hussle feat. Cobby Supreme &amp; Dom Kennedy', 'song': 'Checc Me Out'},
+			{'start': 14848,    'end': 15155,  'artist': 'DāM-FunK ', 'song': 'Hood Pass Intact'},
+			{'start': 15156,    'end': 15359,  'artist': 'Shade Sheist feat. Nate Dogg &amp; Kurupt', 'song': 'Where I Wanna Be'},
+			{'start': 15360,    'end': 15672,  'artist': 'LJT Xperience feat. Anduze', 'song': 'Bad Side'},
+			{'start': 15673,    'end': 15856,  'artist': 'Aurra', 'song': 'Make Up Your Mind'},
+			{'start': 15857,    'end': 16018,  'artist': 'Black Rob &amp; Diddy feat. Puff Daddy', 'song': 'I Love You Baby'},
+			{'start': 16019,    'end': 16370,  'artist': 'Teena Marie', 'song': 'Deja Vu'},
+			{'start': 16371,    'end': 16609,  'artist': 'Rick James', 'song': 'Hollywood'},
+			{'start': 16610,    'end': 16889,  'artist': 'Joey Purp', 'song': 'Elastic'},
+			{'start': 16890,    'end': 17121,  'artist': 'Channel Tres', 'song': 'Skate Depot (Moodymann Remix)'},
+			{'start': 17122,    'end': 17449,  'artist': 'Marvin Belton', 'song': 'The Letter'},
+			{'start': 17450,    'end': 17626,  'artist': 'Moodymann', 'song': 'Basement Party'},
+			{'start': 17627,    'end': 18046,  'artist': 'Moodymann', 'song': 'Pray 4 Love'},
+			{'start': 18047,    'end': 18345,  'artist': 'Moodymann', 'song': 'Technologystolemyvinyle'},
+			{'start': 18346,    'end': 18593,  'artist': 'AMP Fiddler feat. Moodymann', 'song': 'I Get Moody Sometimes'},
+			{'start': 18594,    'end': 19108,  'artist': 'Sandy Barber', 'song': 'I Think I\'ll Do Some Steppin On My Own (Opolopo Rework)'},
+			{'start': 19109,    'end': 19444,  'artist': 'Moodymann', 'song': '9 Nights 2 Nowhere'},
+			{'start': 19445,    'end': 19620,  'artist': 'NEZ feat. Gangsta Boo &amp; Moodymann', 'song': 'Freaks'},
+			{'start': 19621,    'end': 19819,  'artist': 'Obie Trice feat. Nate Dogg', 'song': 'The Setup'},
+			{'start': 19820,    'end': 20134,  'artist': 'Jose James', 'song': 'Love Conversation'},
+			{'start': 20135,    'end': 20416,  'artist': 'Moodymann', 'song': 'Misled'},
+			{'start': 20417,    'end': 20979,  'artist': 'Teena Marie', 'song': 'I Need Your Lovin\''},
+			{'start': 20980,    'end': 21149,  'artist': 'Dr. Dre', 'song': 'Black Privilege'},
+			{'start': 21150,    'end': 21441,  'artist': 'Dr. Dre feat. Nipsey Hustle &amp; Ty Dolla Sign', 'song': 'Diamond Mind'},
+			{'start': 21442,    'end': 21677,  'artist': 'Dr. Dre feat. Anderson .Paak, Snoop Dogg &amp; Busta Rhymes', 'song': 'ETA'},
+			{'start': 21678,    'end': 21881,  'artist': 'Dr. Dre feat. THURZ &amp; Cocoa Sarai', 'song': 'Fallin Up'},
+			{'start': 21882,    'end': 22086,  'artist': 'Dr. Dre feat. Eminem', 'song': 'Gospel'},
+			{'start': 22087,    'end': 22265,  'artist': 'Dr. Dre feat. Rick Ross &amp; Anderson .Paak', 'song': 'The Scenic Route'},
+			{'start': 22266,    'end': 22428,  'artist': 'NEZ feat. ScHoolboy Q', 'song': 'Let\'s Get It'},
+			{'start': 22429,    'end': 22643,  'artist': 'NEZ', 'song': 'You Wanna?'},
+			{'start': 22644,    'end': 22791,  'artist': 'DāM-FunK', 'song': 'The Contract (Space)'},
+			{'start': 22792,    'end': 22908,  'artist': 'Soulwax', 'song': 'Los Santos Drug Wars'},
+			{'start': 22909,    'end': 23099,  'artist': 'Nick Hook', 'song': 'The Diamond Casino Heist'},
+			{'start': 23100,    'end': 23239,  'artist': 'Rampa', 'song': 'The Cayo Perico Heist II'},
+			{'start': 23240,    'end': 23377,  'artist': 'Oh No', 'song': 'Lowriders'},
+			{'start': 23378,    'end': 23482,  'artist': 'Holy Fuck', 'song': 'Bikers'},
+			{'start': 23483,    'end': 23647,  'artist': 'HEALTH', 'song': 'Arena Wars'},
+			{'start': 23648,    'end': 23847,  'artist': '&amp;ME', 'song': 'The Cayo Perico Heist I'},
+			{'start': 23848,    'end': 23977,  'artist': 'DāM-FunK', 'song': 'The Contract (The Journey)'},
+			{'start': 23978,    'end': 24149,  'artist': 'DāM-FunK', 'song': 'The Contract (Mass)'},
+			{'start': 24150,    'end': 24252,  'artist': 'Show Me the Baby', 'song': 'Smuggler\'s Run'},
+			{'start': 24253,    'end': 24383,  'artist': 'Take a Daytrip', 'song': 'Import/Export'},
+			{'start': 24384,    'end': 24553,  'artist': 'James Curd aka Greenskeepers', 'song': 'Executives and Other Criminals'},
+			{'start': 24554,    'end': 24793,  'artist': 'DāM-FunK', 'song': 'The Contract (House Call)'},
+			{'start': 24794,    'end': 24959,  'artist': 'DāM-FunK', 'song': 'The Contract (Smooth Kill)' }
+		],
+		'videoId': 'dPkzYz-AYOs'
+	},
+	Blaine_County_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Blaine_County_Radio',
+		'length': 5079,
+		'logoNumber': '1',
+		'logoPosition': [2,1],
+		'name': 'Blaine County Radio',
+		'playing': false,
+		'stationNumber': '3',
+		'timestamps': [
+			{'start': 0,    'end': 1059,  'artist': 'BCR Community Hour', 'song': nbsp },
+			{'start': 1111, 'end': 1981,  'artist': 'Beyond Insemination', 'song': nbsp },
+			{'start': 2028, 'end': 3782,  'artist': 'Bless Your Heart', 'song': nbsp },
+			{'start': 3836, 'end': 5030,  'artist': 'BCR Community Hour', 'song': nbsp }
+		],
+		'videoId': 'aaXui87cF5Y'
+	},
+	MOTOMAMI_Los_Santos: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'MOTOMAMI_Los_Santos',
+		'length': 6906,
+		'logoNumber': '4',
+		'logoPosition': [3,3],
+		'name': 'MOTOMAMI Los Santos',
+		'playing': false,
+		'stationNumber': '4',
+		'timestamps': [
+			{'start': 9,    'end': 239,  'artist': 'Caroline Polachek',                                             'song': 'Bunny Is A Rider'},
+			{'start': 240,  'end': 408,  'artist': 'ROSALÍA',                                                      'song': 'DI MI NOMBRE (Cap.8: Éxtasis)'},
+			{'start': 409,  'end': 635,  'artist': 'Alberto Stylee',                                               'song': 'Tumbando Fronte'},
+			{'start': 636,  'end': 766,  'artist': 'Tokischa & ROSALÍA',                                          'song': 'Linda'},
+			{'start': 767,  'end': 962,  'artist': 'Tokischa, Haraca Kiko, El Cherry Scom',                       'song': 'Tukuntazo'},
+			{'start': 963,  'end': 1147, 'artist': 'ROSALÍA & J Balvin feat. El Guincho',                         'song': 'Con Altura'},
+			{'start': 1148, 'end': 1580, 'artist': 'Mr. Fingers',                                                  'song': 'Mystery of Love'},
+			{'start': 1581, 'end': 1774, 'artist': 'Bad Gyal',                                                    'song': 'A La Mía'},
+			{'start': 1775, 'end': 1980, 'artist': 'Likkle Vybz & Likkle Addi',                                  'song': 'Skinny Jeans'},
+			{'start': 1981, 'end': 2144, 'artist': 'Las Guanábanas',                                              'song': 'Vamos Pa\' La Disco'},
+			{'start': 2145, 'end': 2353, 'artist': 'Playboi Carti',                                              'song': 'Rockstar Made'},
+			{'start': 2354, 'end': 2605, 'artist': 'Monchy & Alexandra',                                          'song': 'Dos Locos'},
+			{'start': 2606, 'end': 2819, 'artist': 'Camarón De La Isla',                                         'song': 'Volando Voy'},
+			{'start': 2820, 'end': 3069, 'artist': 'Armando',                                                    'song': '100% of Disin\' You'},
+			{'start': 3070, 'end': 3366, 'artist': 'Daddy Yankee feat. Randy',                                   'song': 'Salgo Pa\' La Calle'},
+			{'start': 3367, 'end': 3573, 'artist': 'Soulja Boy Tell \'Em',                                        'song': 'Snap and Roll'},
+			{'start': 3574, 'end': 3758, 'artist': 'Rauw Alejandro',                                             'song': 'Nubes'},
+			{'start': 3759, 'end': 3994, 'artist': 'Aventura',                                                   'song': 'Mi Corazoncito'},
+			{'start': 3995, 'end': 4254, 'artist': 'Arca feat. ROSALÍA',                                        'song': 'KLK'},
+			{'start': 4255, 'end': 4430, 'artist': 'Kaydy Cain feat. Los Del Control',                           'song': 'Algo Como Tú'},
+			{'start': 4431, 'end': 4616, 'artist': 'ROSALÍA feat. The Weeknd',                                  'song': 'LA FAMA'},
+			{'start': 4617, 'end': 4808, 'artist': 'Popcaan',                                                    'song': 'Body So Good'},
+			{'start': 4809, 'end': 4997, 'artist': 'Q',                                                         'song': 'Take Me Where Your Heart Is'},
+			{'start': 4998, 'end': 5160, 'artist': 'Arca',                                                      'song': 'Machote'},
+			{'start': 5161, 'end': 5372, 'artist': 'DJ Slugo',                                                  'song': '418 (Bounce Mix)'},
+			{'start': 5373, 'end': 5682, 'artist': 'Justice',                                                   'song': 'Stress'},
+			{'start': 5683, 'end': 5849, 'artist': 'La Goony Chonga',                                          'song': 'Duro 2005'},
+			{'start': 5850, 'end': 5994, 'artist': 'Chucky73',                                                  'song': 'Dominicana'},
+			{'start': 5995, 'end': 6147, 'artist': 'DJ Spinn',                                                  'song': 'Bounce N Break Yo Back'},
+			{'start': 6148, 'end': 6334, 'artist': 'Young Cister feat. Kaydy Cain',                            'song': 'XULITA'},
+			{'start': 6335, 'end': 6452, 'artist': 'ROSALÍA',                                                  'song': 'A Palé'},
+			{'start': 6453, 'end': 6688, 'artist': 'Willie Colón & Héctor Lavoe',                              'song': 'Calle Luna Calle Sol'},
+			{'start': 6689, 'end': 6906, 'artist': 'Ñejo & Dalmata',                                           'song': 'Vacilar Contigo' }
+		],
+		'videoId': '30uA_Hppzpc'
+	},
+	The_Music_Locker: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'The_Music_Locker',
+		'length': 24984,
+		'logoNumber': '3',
+		'logoPosition': [14,14],
+		'name': 'The Music Locker',
+		'playing': false,
+		'stationNumber': '5',
+		'timestamps': [
+			{'start': 1, 'end': 329, 'artist': 'Adam Port', 'song': 'White Noise Romantica'},
+			{'start': 330, 'end': 610, 'artist': 'Pastaboys feat. Osunlade', 'song': 'Deep Musique (Rampa Remix)'},
+			{'start': 611, 'end': 953, 'artist': '&ME', 'song': 'After Dark'},
+			{'start': 954, 'end': 1258, 'artist': 'Reznik & Good Guy Mikesh', 'song': 'It\'s Not You It\'s Me (Adam Port Remix)'},
+			{'start': 1259, 'end': 1617, 'artist': '&ME', 'song': 'Shadows'},
+			{'start': 1618, 'end': 1874, 'artist': 'Simple Symmetry', 'song': 'Enkidu (Adam Port Tulum By Night Edit)'},
+			{'start': 1875, 'end': 2171, 'artist': 'Rampa', 'song': '2000'},
+			{'start': 2172, 'end': 2358, 'artist': '&ME', 'song': '1995'},
+			{'start': 2359, 'end': 2674, 'artist': 'Rampa', 'song': 'Terrace'},
+			{'start': 2675, 'end': 2991, 'artist': '&ME', 'song': 'Woods'},
+			{'start': 2992, 'end': 3275, 'artist': 'Télépopmusik feat. Young & Sick', 'song': 'Connection (Reznik & Good Guy Mikesh Remix)'},
+			{'start': 3276, 'end': 3626, 'artist': 'Bell Towers', 'song': 'Want You (Adam Port Remix)'},
+			{'start': 3627, 'end': 3908, 'artist': 'Keinemusik', 'song': 'Civilis'},
+			{'start': 3909, 'end': 4177, 'artist': 'Rampa', 'song': 'Bimma'},
+			{'start': 4178, 'end': 4531, 'artist': 'Adam Port & Stereo MCs', 'song': 'Place'},
+			{'start': 4532, 'end': 4735, 'artist': 'Honey Dijon & Tim K feat. John Mendelsohn', 'song': 'Thunda (Rampa Remix)'},
+			{'start': 4736, 'end': 5078, 'artist': '&ME', 'song': 'Solaris'},
+			{'start': 5079, 'end': 5375, 'artist': 'Adam Port', 'song': 'Do You Still Think of Me?'},
+			{'start': 5376, 'end': 5619, 'artist': '&ME feat. Sabota', 'song': 'Trilogy'},
+			{'start': 5620, 'end': 5874, 'artist': 'Rampa', 'song': 'Purge'},
+			{'start': 5875, 'end': 6215, 'artist': 'Simian Mobile Disco feat. Deep Throat Choir', 'song': 'Caught in a Wave'},
+			{'start': 6216, 'end': 6483, 'artist': 'Yeah But No', 'song': 'Run Run Run (Adam Port Remix)'},
+			{'start': 6484, 'end': 6866, 'artist': 'Rampa', 'song': '528Hz'},
+			{'start': 6867, 'end': 7128, 'artist': 'Moodymann', 'song': 'I Can\'t Kick This Feeling When It Hits'},
+			{'start': 7129, 'end': 7293, 'artist': 'Dopplereffekt', 'song': 'Pornoviewer'},
+			{'start': 7294, 'end': 7482, 'artist': 'The Dirtbombs', 'song': 'Sharivari'},
+			{'start': 7483, 'end': 7824, 'artist': 'Andres', 'song': 'New for U (Live)'},
+			{'start': 7825, 'end': 7972, 'artist': 'Kyle Hall & Kero', 'song': 'Zug Island'},
+			{'start': 7973, 'end': 8262, 'artist': 'Norm Talley', 'song': 'Cosmic Wave (Delano Smith Remix)'},
+			{'start': 8263, 'end': 8439, 'artist': 'AUX 88', 'song': 'My A.U.X. Mind'},
+			{'start': 8440, 'end': 8568, 'artist': 'Cybonix', 'song': 'Cybonix Groove'},
+			{'start': 8569, 'end': 8764, 'artist': 'Moodymann', 'song': 'I Think of Saturday'},
+			{'start': 8765, 'end': 9051, 'artist': 'Moodymann', 'song': 'I\'ll Provide'},
+			{'start': 9052, 'end': 9281, 'artist': 'Paperclip People', 'song': 'Oscillator'},
+			{'start': 9282, 'end': 9482, 'artist': 'Blake Baxter', 'song': 'When We Used to Play'},
+			{'start': 9483, 'end': 9607, 'artist': 'Moodymann', 'song': 'JAN'},
+			{'start': 9608, 'end': 9767, 'artist': 'Norma Jean Bell', 'song': 'I\'m the Baddest Bitch'},
+			{'start': 9768, 'end': 9973, 'artist': 'Moodymann & Roberta Sweed', 'song': 'Runaway'},
+			{'start': 9974, 'end': 10212, 'artist': 'GMI/UHM', 'song': 'Formula for Passion'},
+			{'start': 10213, 'end': 10492, 'artist': 'Waajeed', 'song': 'Power in Numbers'},
+			{'start': 10493, 'end': 10687, 'artist': 'Eddie Fowlkes', 'song': 'Time to Express'},
+			{'start': 10688, 'end': 10937, 'artist': 'Sheefy McFly', 'song': 'Thinkin Bout You'},
+			{'start': 10938, 'end': 11181, 'artist': 'Amp Fiddler', 'song': 'Over U'},
+			{'start': 11182, 'end': 11356, 'artist': 'Gil Scott-Heron', 'song': 'We Almost Lost Detroit'},
+			{'start': 11357, 'end': 11448, 'artist': 'Apollo Bronw feat. Planet Asia', 'song': 'Get Back'},
+			{'start': 11449, 'end': 11517, 'artist': 'EGB', 'song': 'Shhhh'},
+			{'start': 11518, 'end': 11651, 'artist': 'EGB', 'song': 'Clout'},
+			{'start': 11652, 'end': 11805, 'artist': 'Moodymann', 'song': 'Sinner'},
+			{'start': 11806, 'end': 12008, 'artist': 'Pirahnahead & Diviniti', 'song': 'Love'},
+			{'start': 12009, 'end': 12361, 'artist': 'Moodymann', 'song': 'Got Me Coming Back Rite Now'},
+			{'start': 12362, 'end': 12490, 'artist': 'Theo Parrish', 'song': 'Soul Control'},
+			{'start': 12491, 'end': 12583, 'artist': 'Marcellus Pittman', 'song': 'Red Dogon Star'},
+			{'start': 12584, 'end': 12791, 'artist': 'Moodymann', 'song': 'Rectify'},
+			{'start': 12792, 'end': 12935, 'artist': 'Moodymann feat. Pitch Black City', 'song': 'Runaway'},
+			{'start': 12936, 'end': 13166, 'artist': 'Moodymann', 'song': 'Let Me Show You Love'},
+			{'start': 13167, 'end': 13414, 'artist': 'Amp Fiddler feat. Moodymann', 'song': 'I Get Moody Sometimes'},
+			{'start': 13415, 'end': 13605, 'artist': 'Moodymann', 'song': 'No'},
+			{'start': 13606, 'end': 13731, 'artist': 'Moodymann', 'song': 'It\'s 2 Late 4 U and Me'},
+			{'start': 13732, 'end': 13844, 'artist': 'Moodymann', 'song': 'Got 2 Make It 2 Heaven'},
+			{'start': 13845, 'end': 14083, 'artist': 'Moodymann', 'song': 'Freeki Muthafucka'},
+			{'start': 14084, 'end': 14278, 'artist': 'Moodymann', 'song': 'I Got Werk'},
+			{'start': 14279, 'end': 14451, 'artist': 'Moodymann', 'song': '1988'},
+			{'start': 14452, 'end': 14720, 'artist': 'Rampa', 'song': 'Newborn Soul'},
+			{'start': 14721, 'end': 14991, 'artist': '&ME', 'song': 'The Rapture Pt.II'},
+			{'start': 14992, 'end': 15264, 'artist': 'Jai Paul', 'song': 'Crush (Unfinished) (Adam Port Edit)'},
+			{'start': 15265, 'end': 15522, 'artist': 'Rampa & WhoMadeWho', 'song': 'Tell Me Are We'},
+			{'start': 15523, 'end': 15852, 'artist': 'Joris Voorn', 'song': 'Homeland (&ME Remix + Jinadu Vocals)'},
+			{'start': 15853, 'end': 16149, 'artist': 'RÜFÜS DU SOL', 'song': 'Underwater (Adam Port Remix)'},
+			{'start': 16150, 'end': 16451, 'artist': '&ME', 'song': 'Garden'},
+			{'start': 16452, 'end': 16673, 'artist': 'Adam Port', 'song': 'Ganesha Song'},
+			{'start': 16674, 'end': 16933, 'artist': 'Âme', 'song': 'No War (Rampa Remix)'},
+			{'start': 16934, 'end': 17218, 'artist': 'WestBam feat. Richard Butler', 'song': 'You Need the Drugs (&ME Remix)'},
+			{'start': 17219, 'end': 17418, 'artist': 'Nomi & Rampa', 'song': 'Inside'},
+			{'start': 17419, 'end': 17649, 'artist': 'Cubicolor', 'song': 'No Dancers (Adam Port Remix)'},
+			{'start': 17650, 'end': 17876, 'artist': 'Manqo', 'song': 'Won\'t Change (Rampa Retouch)'},
+			{'start': 17877, 'end': 18174, 'artist': '&ME feat. Atelier', 'song': 'Starting Again'},
+			{'start': 18175, 'end': 18434, 'artist': 'Xinobi', 'song': 'Faraway Place (Rampa Remix)'},
+			{'start': 18435, 'end': 18798, 'artist': '&ME', 'song': 'The Rapture'},
+			{'start': 18799, 'end': 19115, 'artist': 'Keinemusik', 'song': 'Muyè'},
+			{'start': 19116, 'end': 19464, 'artist': '&ME', 'song': 'In Your Eyes'},
+			{'start': 19465, 'end': 19735, 'artist': 'Rampa', 'song': 'Sunday'},
+			{'start': 19736, 'end': 20159, 'artist': 'NTEIBINT & Stella', 'song': 'A State Nearby (Adam Port Calypso Remix)'},
+			{'start': 20160, 'end': 20338, 'artist': '&ME', 'song': 'Fair Child'},
+			{'start': 20339, 'end': 20580, 'artist': 'Rampa feat. Chiara Noriko', 'song': 'For This'},
+			{'start': 20581, 'end': 20715, 'artist': 'Professor Rhythm', 'song': 'Professor 3'},
+			{'start': 20716, 'end': 20990, 'artist': 'Palms Trax', 'song': 'Petu (Dub Mix)'},
+			{'start': 20991, 'end': 21197, 'artist': 'Klein & MBO', 'song': 'The MBO Theme (Single Version)'},
+			{'start': 21198, 'end': 21320, 'artist': 'Plastic Mode', 'song': 'Beja Imperial (12" Version)'},
+			{'start': 21321, 'end': 21442, 'artist': 'L´Amour feat. Krystal', 'song': 'Let´s Make Love Tonight'},
+			{'start': 21443, 'end': 21632, 'artist': 'Shirley Lites', 'song': 'Heat You Up (Melt You Down Mix)'},
+			{'start': 21633, 'end': 21826, 'artist': 'Shannon', 'song': 'Let the Music Play (Extended 12"Mix)'},
+			{'start': 21827, 'end': 21989, 'artist': 'Night Moves', 'song': 'Transdance (New York Disco Mix)'},
+			{'start': 21990, 'end': 22342, 'artist': 'N.O.I.A', 'song': 'The Rule to Survive (Prins Thomas Diskomiks)'},
+			{'start': 22343, 'end': 22486, 'artist': 'Tobias Bernstrup', 'song': '27 (Laser Mix)'},
+			{'start': 22487, 'end': 22608, 'artist': 'Baby´s Gang', 'song': 'Happy Song'},
+			{'start': 22609, 'end': 22843, 'artist': 'Masalo', 'song': 'New Dance'},
+			{'start': 22844, 'end': 23032, 'artist': 'Diva', 'song': 'Get Up (Club Mix)'},
+			{'start': 23033, 'end': 23213, 'artist': 'Mario Diaz feat. Mr Lee', 'song': 'Can You Feel It (Jackin Up the Dub 12"Mix'},
+			{'start': 23214, 'end': 23329, 'artist': 'Scrappy', 'song': 'Freeze (Limelight Mix)'},
+			{'start': 23330, 'end': 23470, 'artist': 'B Beat Girls', 'song': 'For the Same Man'},
+			{'start': 23471, 'end': 23722, 'artist': 'Greg Lee', 'song': 'Got U on My Mind'},
+			{'start': 23723, 'end': 23929, 'artist': 'Robert Owens', 'song': 'Visions (Frankie Knuckles & David Morales Mix)'},
+			{'start': 23930, 'end': 24228, 'artist': 'Lisa Lee', 'song': 'When I Call You (Tommy Musto & Frankie Bones British Telecom Mix)'},
+			{'start': 24229, 'end': 24355, 'artist': 'Pierre´s Pfantasy Club', 'song': 'Dream Girl (Wet Dream Mix)'},
+			{'start': 24356, 'end': 24519, 'artist': 'S.L.F.', 'song': 'Show Me What You Got (Acid Mix Part 1)'},
+			{'start': 24520, 'end': 24692, 'artist': 'Phortune', 'song': 'String Free (12" Club Leray Mix)'},
+			{'start': 24693, 'end': 24984, 'artist': 'Kamazu', 'song': 'Indaba Kabani' }
+		],
+		'videoId': 'dBvMBYbUZFc'
+	},
+	Blue_Ark: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Blue_Ark',
+		'length': 4790,
+		'logoNumber': '1',
+		'logoPosition': [3,2],
+		'name': 'The Blue Ark',
+		'playing': false,
+		'stationNumber': '6',
+		'timestamps': [
+			{'start': 8,    'end': 214,  'artist': 'Chronixx',                                               'song': 'Odd Ras'},
+			{'start': 215,  'end': 435,  'artist': 'Dennis Brown',                                           'song': 'Money In My Pocket'},
+			{'start': 436,  'end': 669,  'artist': 'Gregory Issacs',                                         'song': 'Night Nurse'},
+			{'start': 670,  'end': 879,  'artist': 'Half Pint',                                               'song': 'Crazy Girl'},
+			{'start': 880,  'end': 1104, 'artist': 'Joe Gibbs & The Professionals',                         'song': 'Chapter Three'},
+			{'start': 1105, 'end': 1386, 'artist': 'Junior Delgado',                                         'song': 'Sons Of Slaves'},
+			{'start': 1387, 'end': 1599, 'artist': 'Konshens',                                               'song': 'Gun Shot A Fire'},
+			{'start': 1600, 'end': 1860, 'artist': 'Lee "Scratch" Perry',                                   'song': 'I Am A Madman'},
+			{'start': 1861, 'end': 2164, 'artist': 'Lee Scratch Perry & The Full Experience',              'song': 'Disco Devil'},
+			{'start': 2165, 'end': 2382, 'artist': 'The Upsetters',                                          'song': 'Grumblin\' Dub'},
+			{'start': 2383, 'end': 2541, 'artist': 'Tommy Lee Sparta',                                       'song': 'Psycho'},
+			{'start': 2542, 'end': 2731, 'artist': 'Vybz Carter Ft Popcaan',                                 'song': 'We Never Fear Dem'},
+			{'start': 2732, 'end': 2954, 'artist': 'Yellowman',                                              'song': 'Nobody Move Nobody Get Hurt'},
+			{'start': 2955, 'end': 3197, 'artist': 'protoje',                                                'song': 'Kingston Be Wise'},
+			{'start': 3198, 'end': 3365, 'artist': 'Demarco',                                                'song': 'Loyals (Royals Remix)'},
+			{'start': 3366, 'end': 3605, 'artist': 'Busy Signal',                                           'song': 'Kingston Town'},
+			{'start': 3606, 'end': 3826, 'artist': 'I-Octane',                                               'song': 'Topic Of The Day'},
+			{'start': 3827, 'end': 4021, 'artist': 'Vybz Cartel',                                           'song': 'Addi Truth'},
+			{'start': 4022, 'end': 4319, 'artist': 'Lee "Scratch" Perry',                                   'song': 'Money Come & Money Go'},
+			{'start': 4320, 'end': 4579, 'artist': 'Lee "Scratch" Perry',                                   'song': 'Roast Fish & Cornbread'},
+			{'start': 4580, 'end': 4790, 'artist': 'Danny Hansworth',                                       'song': 'Mr. Money Man' }
+		],
+		'videoId': 'osmrXqRuwJA'
+	},
+	Worldwide_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Worldwide_FM',
+		'length': 6955,
+		'logoNumber': '1',
+		'logoPosition': [0,3],
+		'name': 'Worldwide FM',
+		'playing': false,
+		'stationNumber': '7',
+		'timestamps': [
+			{'start': 0, 'end': 160, 'artist': 'Cashmere Cat', 'song': 'Mirror Maru'},
+			{'start': 161, 'end': 303, 'artist': 'The Hics', 'song': 'Cold Air'},
+			{'start': 304, 'end': 518, 'artist': 'inc.', 'song': 'The Place'},
+			{'start': 519, 'end': 783, 'artist': 'Trickski', 'song': 'Beginnings'},
+			{'start': 784, 'end': 987, 'artist': 'Mala', 'song': 'Ghost'},
+			{'start': 988, 'end': 1154, 'artist': 'Swindle', 'song': 'Forest Funk'},
+			{'start': 1155, 'end': 1322, 'artist': 'Tom Browne', 'song': 'Throw Down'},
+			{'start': 1323, 'end': 1598, 'artist': 'Donald Byrd', 'song': 'You And The Music'},
+			{'start': 1599, 'end': 1815, 'artist': 'Candido', 'song': 'Thousand Finger Man'},
+			{'start': 1816, 'end': 1945, 'artist': 'Toro y Moi', 'song': 'Harm in Change'},
+			{'start': 1946, 'end': 2159, 'artist': 'Kyodai', 'song': 'Breaking'},
+			{'start': 2160, 'end': 2331, 'artist': 'Django Django', 'song': 'Waveforms'},
+			{'start': 2332, 'end': 2565, 'artist': 'The Gaslamp Killer', 'song': 'Nissim'},
+			{'start': 2566, 'end': 2735, 'artist': 'Owiny Sigoma Band', 'song': 'Harpoon Land'},
+			{'start': 2736, 'end': 2918, 'artist': 'Guts', 'song': 'Brand New Revolution'},
+			{'start': 2919, 'end': 3105, 'artist': 'Yuna', 'song': 'Live Your Life (MELO-X MOTHERLAND GOD MIX)'},
+			{'start': 3106, 'end': 3363, 'artist': 'Tuccillo, Kiko Navarro Feat. Amor', 'song': 'Lovery (Soul Cuban Vibe Mix)'},
+			{'start': 3364, 'end': 3602, 'artist': 'Richard Spaven, Vincent Helbers Feat Jonas Lonnas', 'song': '1750 (Outra)'},
+			{'start': 3603, 'end': 3734, 'artist': 'Sinkane', 'song': 'Shark Week'},
+			{'start': 3735, 'end': 3925, 'artist': 'William Onyeabor', 'song': 'Body & Soul'},
+			{'start': 3926, 'end': 4069, 'artist': 'Four Tet', 'song': 'Kool FM'},
+			{'start': 4070, 'end': 4274, 'artist': 'Mount Kimbie', 'song': 'Made to Stray'},
+			{'start': 4275, 'end': 4438, 'artist': 'Anushka', 'song': 'World in a Room'},
+			{'start': 4439, 'end': 4645, 'artist': 'Smokey Robinson', 'song': 'Why You Wanna See My Bad Side?'},
+			{'start': 4646, 'end': 4927, 'artist': 'Randy Crawford', 'song': 'Street Life'},
+			{'start': 4928, 'end': 5145, 'artist': 'Flume', 'song': 'What You Need'},
+			{'start': 5146, 'end': 5420, 'artist': 'Earl Sweatshirt feat. Casey Veggies and Vince Staples', 'song': 'Hive'},
+			{'start': 5421, 'end': 5586, 'artist': 'Portishead', 'song': 'Numb'},
+			{'start': 5587, 'end': 5708, 'artist': 'Jonwayne', 'song': 'Black Magic'},
+			{'start': 5709, 'end': 5854, 'artist': 'Roman GianArthur', 'song': 'I69'},
+			{'start': 5855, 'end': 5966, 'artist': 'Lion Babe', 'song': 'Treat Me Like Fire'},
+			{'start': 5967, 'end': 6069, 'artist': 'Damfunk', 'song': 'Kildat'},
+			{'start': 6070, 'end': 6247, 'artist': 'Jamie Lidell', 'song': 'Runaway'},
+			{'start': 6248, 'end': 6409, 'artist': 'CHVRCHES', 'song': 'Recover (Cid Rim Remix)'},
+			{'start': 6410, 'end': 6601, 'artist': 'Jimmy Edgar', 'song': 'Let Yrself Be'},
+			{'start': 6602, 'end': 6726, 'artist': 'Clap! Clap!', 'song': 'Viajero'},
+			{'start': 6727, 'end': 6955, 'artist': 'Maga Bo', 'song': 'No Balanco De Conoa'}
+		],
+		'videoId': 'fYi-ZoglszY'
+	},
+	FlyLo_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'FlyLo_FM',
+		'length': 2520,
+		'logoNumber': '1',
+		'logoPosition': [1,3],
+		'name': 'FlyLo FM',
+		'playing': false,
+		'stationNumber': '8',
+		'timestamps': [
+			{'start': 0,    'end': 145,   'artist': 'Flying Lotus',                       'song': 'Getting There (feat. Niki Randa)'},
+			{'start': 146,  'end': 222,   'artist': 'Clams Casino',                       'song': 'Crystals'},
+			{'start': 223,  'end': 262,   'artist': 'Flying Lotus',                       'song': 'Crosswerved'},
+			{'start': 263,  'end': 361,   'artist': 'Flying Lotus',                       'song': 'Be Spin'},
+			{'start': 362,  'end': 410,   'artist': 'Flying Lotus',                       'song': 'See Thru To U (feat. Erykah Badu)'},
+			{'start': 411,  'end': 479,   'artist': 'Flying Lotus',                       'song': 'The Diddler'},
+			{'start': 480,  'end': 569,   'artist': 'Flying Lotus',                       'song': 'Computer Face RMX'},
+			{'start': 570,  'end': 640,   'artist': 'Hudson Mohawke',                     'song': '100hm'},
+			{'start': 641,  'end': 838,   'artist': 'Flying Lotus',                       'song': 'The Kill (feat. Niki Randa)'},
+			{'start': 839,  'end': 1029,  'artist': 'Tyler, The Creator',                 'song': 'Garbage'},
+			{'start': 1030, 'end': 1181,  'artist': 'Outkast',                            'song': 'Elevators (Me & You)'},
+			{'start': 1182, 'end': 1292,  'artist': 'Captain Murphy',                     'song': 'Evil Grin'},
+			{'start': 1293, 'end': 1398,  'artist': 'Flying Lotus',                       'song': 'Catapult Man'},
+			{'start': 1399, 'end': 1475,  'artist': 'Dabrye',                             'song': 'Encoded Flow'},
+			{'start': 1476, 'end': 1611,  'artist': 'Machinedrum',                        'song': 'She Died There'},
+			{'start': 1612, 'end': 1787,  'artist': 'DJ Rashad & Heavee',                 'song': 'It\'s Wack'},
+			{'start': 1788, 'end': 1951,  'artist': 'Thundercat',                         'song': 'O Sheit It\'s X'},
+			{'start': 1952, 'end': 2080,  'artist': 'Flying Lotus',                       'song': 'Stonecutters'},
+			{'start': 2081, 'end': 2248,  'artist': 'Shadow Child',                       'song': '23'},
+			{'start': 2249, 'end': 2342,  'artist': 'Kingdom',                            'song': 'Stalker Ha'},
+			{'start': 2343, 'end': 2520,  'artist': 'Aphex Twin',                         'song': 'Windowlicker' }
+		],
+		'videoId': 'YAzCJINGWGM'
+	},
+	The_Low_Down_911: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'The_Low_Down_911',
+		'length': 4372,
+		'logoNumber': '1',
+		'logoPosition': [2,3],
+		'name': 'The Low Down 91.1',
+		'playing': false,
+		'stationNumber': '9',
+		'timestamps': [
+			{'start': 42, 'end': 263, 'artist': 'Aaron Neville', 'song': 'Hercules'},
+			{'start': 264, 'end': 491, 'artist': 'B.T. Express', 'song': 'Do It (\'Til You\'re Satisfied)'},
+			{'start': 492, 'end': 730, 'artist': 'El Chicano', 'song': 'Viva Tirado'},
+			{'start': 731, 'end': 909, 'artist': 'George McCrae & The Sunshine Band', 'song': 'I Get Lifted'},
+			{'start': 910, 'end': 1113, 'artist': 'Marlena Shaw', 'song': 'California Soul'},
+			{'start': 1114, 'end': 1353, 'artist': 'Smokey Robinson & Jessie J', 'song': 'Cruising'},
+			{'start': 1354, 'end': 1503, 'artist': 'The Delfonics', 'song': 'Ready Or Not (Here I Come)'},
+			{'start': 1504, 'end': 1717, 'artist': 'The Five Stairsteps', 'song': 'Ooh Child'},
+			{'start': 1718, 'end': 1988, 'artist': 'The Soul Searchers', 'song': 'Ashley\'s Roachclip'},
+			{'start': 1989, 'end': 2270, 'artist': 'The Trammps', 'song': 'Rubber Band'},
+			{'start': 2271, 'end': 2460, 'artist': 'The Undisputed Truth', 'song': 'Smiling Faces Sometimes'},
+			{'start': 2461, 'end': 2673, 'artist': 'War', 'song': 'The Cisco Kid'},
+			{'start': 2674, 'end': 3025, 'artist': 'Brass Construction', 'song': 'Changing'},
+			{'start': 3026, 'end': 3232, 'artist': 'Johnny "Guitar" Watson', 'song': 'Superman Lover'},
+			{'start': 3233, 'end': 3489, 'artist': 'Ohio Players', 'song': 'Climax'},
+			{'start': 3490, 'end': 3728, 'artist': 'Pleasure', 'song': 'Bouncy Bouncy Lady'},
+			{'start': 3729, 'end': 3893, 'artist': 'The Delfonics', 'song': 'Funny Feeling (Original Mix)'},
+			{'start': 3894, 'end': 4040, 'artist': 'The Chakachas', 'song': 'Stories'},
+			{'start': 4041, 'end': 4231, 'artist': 'The Jackson Sisters', 'song': 'I Believe In Miracle'},
+			{'start': 4232, 'end': 4372, 'artist': 'War', 'song': 'Magic Mountain' }
+		],
+		'videoId': 'oaNdiTLKlMA'
+	},
+	The_Lab: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'The_Lab',
+		'length': 3299,
+		'logoNumber': '1',
+		'logoPosition': [5,1],
+		'name': 'The Lab',
+		'playing': false,
+		'stationNumber': '10',
+		'timestamps': [
+			{'start': 0, 'end': 232, 'artist': 'Gangrene', 'song': 'Play It Cool (feat. Samuel T. Herring & Earl Sweatshirt)'},
+			{'start': 233, 'end': 459, 'artist': 'Ab-Soul', 'song': 'Trouble (feat. Aloe Blacc)'},
+			{'start': 460, 'end': 709, 'artist': 'Tunde Adebimpe', 'song': 'Speedline Miracle Masterpiece (feat. Sal P & Sinkane)'},
+			{'start': 710, 'end': 940, 'artist': 'MC Eiht & Freddie Gibbs', 'song': 'Welcome to Los Santos (feat. Kokane)'},
+			{'start': 941, 'end': 1201, 'artist': 'Phantogram', 'song': 'K.Y.S.A'},
+			{'start': 1202, 'end': 1412, 'artist': 'Vybz Kartel', 'song': 'Fast Life'},
+			{'start': 1413, 'end': 1675, 'artist': 'King Avriel', 'song': '20\'s 50\'s 100\'s (feat. A$AP Ferg)'},
+			{'start': 1676, 'end': 1935, 'artist': 'MNDR', 'song': 'Lock & Load (feat. Killer Mike)'},
+			{'start': 1936, 'end': 2144, 'artist': 'Popcaan', 'song': 'Born Bad (feat. Freddie Gibbs)'},
+			{'start': 2145, 'end': 2380, 'artist': 'E-40', 'song': 'California (feat. Dam-Funk & Ariel Pink)'},
+			{'start': 2381, 'end': 2575, 'artist': 'Wavves', 'song': 'Leave'},
+			{'start': 2576, 'end': 2855, 'artist': 'Curren$y & Freddie Gibbs', 'song': 'Fetti'},
+			{'start': 2856, 'end': 3131, 'artist': 'Little Dragon', 'song': 'Wanderer'},
+			{'start': 3132, 'end': 3299, 'artist': 'Action Bronson & Danny Brown', 'song': 'Bad News' }
+		],
+		'videoId': '4J6JK7ich6E'
+	},
+	Radio_Mirror_Park: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Radio_Mirror_Park',
+		'length': 12773,
+		'logoNumber': '1',
+		'logoPosition': [3,1],
+		'name': 'Radio Mirror Park',
+		'playing': false,
+		'stationNumber': '11',
+		'timestamps': [
+			{'start': 11,   'end': 248,   'artist': 'Twin Shadow',                   'song': 'Forget'},
+			{'start': 249,  'end': 523,   'artist': 'KAUF',                          'song': 'When You\'re Out'},
+			{'start': 524,  'end': 754,   'artist': 'Little Dragon',               'song': 'Crystalfilm'},
+			{'start': 755,  'end': 964,   'artist': '!!!',                            'song': 'One Girl / One Boy'},
+			{'start': 965,  'end': 1184,  'artist': 'Nite Jewel',                    'song': 'Nowhere to Go'},
+			{'start': 1185, 'end': 1400,  'artist': 'Favored Nations',               'song': 'The Set Up'},
+			{'start': 1401, 'end': 1627,  'artist': 'Y.A.C.H.T.',                   'song': 'Psychic City (Classixx Remix)'},
+			{'start': 1628, 'end': 1899,  'artist': 'Yeasayer',                     'song': 'O.N.E.'},
+			{'start': 1900, 'end': 2121,  'artist': 'The Chain Gang of 1974',       'song': 'Sleepwalking'},
+			{'start': 2122, 'end': 2342,  'artist': 'Poolside',                     'song': 'Do You Believe?'},
+			{'start': 2343, 'end': 2591,  'artist': 'Jai Paul',                     'song': 'Jasmine (Demo)'},
+			{'start': 2592, 'end': 2806,  'artist': 'DJ Mehdi',                     'song': 'Lucky Boy (Outlines Remix)'},
+			{'start': 2807, 'end': 3044,  'artist': 'Hot Chip',                     'song': 'Flutes'},
+			{'start': 3045, 'end': 3401,  'artist': 'Holy Ghost!',                  'song': 'Hold On'},
+			{'start': 3402, 'end': 3611,  'artist': 'Yeasayer',                     'song': 'Don\'t Come Close'},
+			{'start': 3612, 'end': 3797,  'artist': 'Living Days',                  'song': 'Little White Lie'},
+			{'start': 3798, 'end': 4000,  'artist': 'Neon Indian',                  'song': 'Change of Coast'},
+			{'start': 4001, 'end': 4232,  'artist': 'Twin Shadow',                   'song': 'Old Love / New Love'},
+			{'start': 4233, 'end': 4463,  'artist': 'Niki & the Dove',              'song': 'The Drummer'},
+			{'start': 4464, 'end': 4688,  'artist': 'Toro y Moi',                   'song': 'So Many Details'},
+			{'start': 4689, 'end': 4916,  'artist': 'Miami Horror',                 'song': 'Sometimes'},
+			{'start': 4917, 'end': 5141,  'artist': 'Battle Tapes',                 'song': 'Feel the Same'},
+			{'start': 5142, 'end': 5371,  'artist': 'Age of Consent',               'song': 'Colours'},
+			{'start': 5372, 'end': 5580,  'artist': 'The Ruby Suns',                'song': 'In Real Life'},
+			{'start': 5581, 'end': 5843,  'artist': 'Toro y Moi',                   'song': 'New Beat'},
+			{'start': 5844, 'end': 6040,  'artist': 'Twin Shadow',                   'song': 'Shooting Holes'},
+			{'start': 6041, 'end': 6328,  'artist': 'Neon Indian',                  'song': 'Polish Girl'},
+			{'start': 6329, 'end': 6547,  'artist': 'SBTRKT feat. Roses Gabor',     'song': 'Pharaohs'},
+			{'start': 6548, 'end': 6828,  'artist': 'Cut Copy',                     'song': 'Strangers in the Wind'},
+			{'start': 6829, 'end': 7049,  'artist': 'Panama',                       'song': 'Always'},
+			{'start': 7050, 'end': 7326,  'artist': 'Mitzi',                        'song': 'Truly Alive'},
+			{'start': 7327, 'end': 7545,  'artist': 'Dan Croll',                    'song': 'From Nowhere (Baardsen Remix)'},
+			{'start': 7546, 'end': 7753,  'artist': 'Feathers',                     'song': 'Dark Matter'},
+			{'start': 7754, 'end': 7996,  'artist': 'Black Strobe',                 'song': 'Boogie in Zero Gravity'},
+			{'start': 7997, 'end': 8231,  'artist': 'The C90s',                     'song': 'Shine a Light (Flight Facilities Remix)'},
+			{'start': 8232, 'end': 8486,  'artist': 'Tony Castles',                 'song': 'Heart in the Pipes (KAUF Remix)'},
+			{'start': 8487, 'end': 8708,  'artist': 'Age of Consent',               'song': 'Heartbreak'},
+			{'start': 8709, 'end': 8904,  'artist': 'Dom',                          'song': 'Living in America'},
+			{'start': 8905, 'end': 9118,  'artist': 'Scenic',                       'song': 'Mesmerised'},
+			{'start': 9119, 'end': 9309,  'artist': 'HEALTH',                       'song': 'High Pressure Dave'},
+			{'start': 9310,  'end': 9520,  'artist': 'SebastiAn feat. Mayer Hawthorne',       'song': 'Love in Motion'},
+			{'start': 9521,  'end': 9765,  'artist': 'Gold Fields',                           'song': 'Thunder'},
+			{'start': 9766,  'end': 10018, 'artist': 'Future Islands',                        'song': 'Before the Bridge'},
+			{'start': 10019, 'end': 10257, 'artist': 'Ducktails',                             'song': 'Assistant Director'},
+			{'start': 10258, 'end': 10533, 'artist': 'Twin Shadow',                          'song': 'Run My Heart'},
+			{'start': 10534, 'end': 10736, 'artist': 'The Shoes & Anthonin Ternant',         'song': 'Time to Dance'},
+			{'start': 10737, 'end': 11031, 'artist': 'Junior Boys',                          'song': 'ep'},
+			{'start': 11032, 'end': 11264, 'artist': 'Digitalism',                            'song': '2 Hearts'},
+			{'start': 11265, 'end': 11514, 'artist': 'Panama',                                'song': 'One Piece'},
+			{'start': 11515, 'end': 11781, 'artist': 'Toro y Moi',                           'song': 'Day One'},
+			{'start': 11782, 'end': 12043, 'artist': 'Ultraísta',                            'song': 'Smalltalk (Four Tet Remix)'},
+			{'start': 12044, 'end': 12363, 'artist': 'Friendly Fires',                       'song': 'Hurting'},
+			{'start': 12364, 'end': 12579, 'artist': 'Moving Units',                         'song': 'Until She Says'},
+			{'start': 12580, 'end': 12773,  'artist': 'Rainbow Arabia',                       'song': 'Blind' }
+		],
+		'videoId': 'SDWHIACuuaQ'
+	},
+	Kult_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Kult_FM',
+		'length': 8200,
+		'logoNumber': '5',
+		'logoPosition': [0,0],
+		'name': 'Kult FM',
+		'playing': false,
+		'stationNumber': '12',
+		'timestamps': [
+			{'start': 35,   'end': 329,   'artist': 'Viagra Boys',                  'song': 'Girls and Boys'},
+			{'start': 330,  'end': 511,   'artist': 'The Cramps',                   'song': 'Human Fly'},
+			{'start': 512,  'end': 911,   'artist': 'Colourbox',                    'song': 'Baby I Love You So'},
+			{'start': 912,  'end': 1138,  'artist': 'The Stooges',                  'song': 'Down on the Street'},
+			{'start': 1139, 'end': 1437,  'artist': 'T La Rock',                    'song': 'It\'s Yours'},
+			{'start': 1438, 'end': 1590,  'artist': 'Nick Lowe',                    'song': 'So It Goes'},
+			{'start': 1591, 'end': 1901,  'artist': 'New Order',                    'song': 'Age of Consent'},
+			{'start': 1902, 'end': 2139,  'artist': 'Icky Blossoms',                'song': 'Cycle'},
+			{'start': 2140, 'end': 2395,  'artist': 'LL Cool J',                    'song': 'Going Back To Cali'},
+			{'start': 2396, 'end': 2731,  'artist': 'Mac Demarco',                  'song': 'On the Level'},
+			{'start': 2732, 'end': 2981,  'artist': 'DAF',                          'song': 'Liebe Auf Den Ersten Blick'},
+			{'start': 2982, 'end': 3252,  'artist': 'The Slits',                   'song': 'Typical Girls'},
+			{'start': 3253, 'end': 3507,  'artist': 'Iggy Pop',                     'song': 'Nightclubbing'},
+			{'start': 3508, 'end': 3779,  'artist': 'Crack Cloud',                  'song': 'Drab Measure'},
+			{'start': 3780, 'end': 4042,  'artist': 'Ariel Pink',                   'song': 'Four Shadows'},
+			{'start': 4043, 'end': 4369,  'artist': 'MC Shan feat. TJ Swan',       'song': 'Left Me Lonely'},
+			{'start': 4370, 'end': 4700,  'artist': 'The Strokes',                 'song': 'The Adults Are Talking'},
+			{'start': 4701, 'end': 4828,  'artist': 'Gloria Jones',                'song': 'Tainted Love'},
+			{'start': 4829, 'end': 5100,  'artist': 'Joy Division',                'song': 'She\'s Lost Control'},
+			{'start': 5101, 'end': 5234,  'artist': 'Connie Francis',              'song': 'Many Tears Ago'},
+			{'start': 5235, 'end': 5417,  'artist': 'Ramones',                     'song': 'Time Bomb'},
+			{'start': 5418, 'end': 5676,  'artist': 'The Voidz',                   'song': 'Alien Crime Lord'},
+			{'start': 5677, 'end': 5879,  'artist': 'Lea Porcelain',               'song': 'Pool Song'},
+			{'start': 5880, 'end': 6156,  'artist': 'The Strokes',                 'song': 'Hard to Explain'},
+			{'start': 6157, 'end': 6442,  'artist': 'The The',                     'song': 'This Is the Day'},
+			{'start': 6443, 'end': 6703,  'artist': 'Grauzone',                    'song': 'Eisbär'},
+			{'start': 6704, 'end': 6865,  'artist': 'Misfits',                     'song': 'TV Casualty'},
+			{'start': 6866, 'end': 7143,  'artist': 'Danzig',                      'song': 'Deep'},
+			{'start': 7144, 'end': 7447,  'artist': 'Charanjit Singh',             'song': 'Raga Madhuvanti'},
+			{'start': 7448, 'end': 7583,  'artist': 'A Certain Ratio',             'song': 'Faceless'},
+			{'start': 7584, 'end': 7820,  'artist': 'The Voidz',                   'song': 'Where No Eagles Fly'},
+			{'start': 7821, 'end': 8063,  'artist': 'Promiseland',                 'song': 'Take Down the House'},
+			{'start': 8064, 'end': 8200,  'artist': 'Automatic',                  'song': 'Too Much Money' }
+		],
+		'videoId': 'FY9EiOllRhE'
+	},
+	Space_1032: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Space_1032',
+		'length': 5653,
+		'logoNumber': '1',
+		'logoPosition': [4,2],
+		'name': 'Space 103.2',
+		'playing': false,
+		'stationNumber': '13',
+		'timestamps': [
+			{'start': 44,    'end': 274,   'artist': 'Bootsy Collins',         'song': 'I\'d Rather Be With You'},
+			{'start': 275,   'end': 553,   'artist': 'D. Train',               'song': 'You\'re The One For Me'},
+			{'start': 554,   'end': 774,   'artist': 'Eddie Murphy',           'song': 'Party All The Time'},
+			{'start': 775,   'end': 1055,  'artist': 'Evelyn \'Champagne\' King', 'song': 'I\'m In Love (12\' Mix)'},
+			{'start': 1056,  'end': 1330,  'artist': 'Kano',                   'song': 'Can\'t Hold Back (Your Lovin\')'},
+			{'start': 1331,  'end': 1565,  'artist': 'Kleeer',                 'song': 'Tonight'},
+			{'start': 1566,  'end': 1800,  'artist': 'Bernard Wright',         'song': 'Haboglabotribin\''},
+			{'start': 1801,  'end': 2018,  'artist': 'One Way',                'song': 'Cutie Pie'},
+			{'start': 2019,  'end': 2266,  'artist': 'Rick James',             'song': 'Give It To Me Baby'},
+			{'start': 2267,  'end': 2460,  'artist': 'Sho-Nuff',               'song': 'Funkasize You'},
+			{'start': 2461,  'end': 2701,  'artist': 'Stevie Wonder',          'song': 'Skeletons'},
+			{'start': 2702,  'end': 2960,  'artist': 'Taana Gardner',          'song': 'Heartbeat'},
+			{'start': 2961,  'end': 3215,  'artist': 'Zapp',                   'song': 'Heartbreaker, Pts 1 & 2'},
+			{'start': 3216,  'end': 3508,  'artist': 'Billy Ocean',            'song': 'Nights (Feel Like Getting Down)'},
+			{'start': 3509,  'end': 3767,  'artist': 'Cameo',                  'song': 'Back And Forth'},
+			{'start': 3768,  'end': 4039,  'artist': 'Central Line',           'song': 'Walking Into Sunshine'},
+			{'start': 4040,  'end': 4270,  'artist': 'Dazz Band',              'song': 'Joystick'},
+			{'start': 4271,  'end': 4553,  'artist': 'Imagination',            'song': 'Flashback'},
+			{'start': 4554,  'end': 4814,  'artist': 'Parliament',             'song': 'Flashlight'},
+			{'start': 4815,  'end': 5107,  'artist': 'Parliament',             'song': 'Mothership Connection (Star Child)'},
+			{'start': 5108,  'end': 5349,  'artist': 'The Fatback Band',       'song': 'Gotta Get My Hands On Some (Money)'},
+			{'start': 5350,  'end': 5653,  'artist': 'Zapp & Roger',           'song': 'Do It Roger' }
+		],
+		'videoId': 'lCZc9y9KpY4'
+	},
+	Vinewood_Boulevard_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Vinewood_Boulevard_Radio',
+		'length': 3891,
+		'logoNumber': '1',
+		'logoPosition': [1,2],
+		'name': 'Vinewood Boulevard Radio',
+		'playing': false,
+		'stationNumber': '14',
+		'timestamps': [
+			{'start': 0,    'end': 188,  'artist': 'Hot Snakes',           'song': 'This Mystic Decade'        },
+			{'start': 189,  'end': 372,  'artist': 'FIDLAR',               'song': 'Cocaine'                    },
+			{'start': 373,  'end': 577,  'artist': 'Bass Drum of Death',   'song': 'Crawling After You'         },
+			{'start': 578,  'end': 835,  'artist': 'The Soft Pack',        'song': 'Answer to Yourself'         },
+			{'start': 836,  'end': 1109, 'artist': 'The Black Angels',     'song': 'Black Grease'               },
+			{'start': 1110, 'end': 1366, 'artist': 'METZ',                 'song': 'Wet Blanket'                },
+			{'start': 1367, 'end': 1495, 'artist': 'Ty Segall Band',       'song': 'Diddy Wah Diddy'            },
+			{'start': 1496, 'end': 1691, 'artist': 'Mind Spiders',         'song': 'Fall In Line'               },
+			{'start': 1692, 'end': 1869, 'artist': 'Ceremony',             'song': 'Hysteria'                   },
+			{'start': 1870, 'end': 2085, 'artist': 'Wavves',               'song': 'Nine Is God'                },
+			{'start': 2086, 'end': 2297, 'artist': 'Thee Oh Sees',         'song': 'The Dream'                  },
+			{'start': 2298, 'end': 2490, 'artist': 'Bleached',             'song': 'Next Stop'                  },
+			{'start': 2491, 'end': 2716, 'artist': 'Moon Duo',             'song': 'Sleepwalker'                },
+			{'start': 2717, 'end': 2944, 'artist': 'Sam Flax',             'song': 'Fire Doesn\'t Burn Itself'   },
+			{'start': 2945, 'end': 3150, 'artist': 'Shark?',               'song': 'California Grrls'           },
+			{'start': 3151, 'end': 3334, 'artist': 'JEFF The Brotherhood', 'song': 'Sixpack'                    },
+			{'start': 3335, 'end': 3498, 'artist': 'Coliseum',             'song': 'Used Blood'                 },
+			{'start': 3499, 'end': 3607, 'artist': 'Nobunny',              'song': 'Gone For Good'              },
+			{'start': 3608, 'end': 3891, 'artist': 'The Men',              'song': 'Turn It Around'             }
+		],
+		'videoId': '8dCwPmAPcLw'
+	},
+	Blonded_Los_Santos_978_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Blonded_Los_Santos_978_FM',
+		'length': 6139,
+		'logoNumber': '1',
+		'logoPosition': [4,1],
+		'name': 'Blonded Los Santos 97.8 FM',
+		'playing': false,
+		'stationNumber': '15',
+		'timestamps': [
+			{'start': 0,   'end': 202,   'artist': 'Todd Rundgren',                                       'song': 'International Feel'},
+			{'start': 203,  'end': 413,   'artist': 'Panda Bear',                                         'song': 'Mr Noah'},
+			{'start': 414,  'end': 652,   'artist': 'Frank Ocean',                                        'song': 'Provider'},
+			{'start': 653,  'end': 977,   'artist': 'Schoolboy Q feat. Lance Skiiiwalker',               'song': 'Kno Ya Wrong'},
+			{'start': 978,  'end': 1223,  'artist': 'SWV',                                                'song': 'Rain'},
+			{'start': 1224, 'end': 1314,  'artist': 'Joy Again',                                         'song': 'On a Farm'},
+			{'start': 1315, 'end': 1542,  'artist': 'Frank Ocean',                                        'song': 'Ivy'},
+			{'start': 1543, 'end': 1863,  'artist': 'Curtis Mayfield',                                    'song': 'So in Love'},
+			{'start': 1864, 'end': 2240,  'artist': 'Marvin Gaye',                                        'song': 'When Did You Stop Loving Me, When Did I Stop Loving You'},
+			{'start': 2241, 'end': 2439,  'artist': 'Les Ya Toupas Do Zaire',                             'song': 'Je ne bois pas beaucoup'},
+			{'start': 2440, 'end': 2603,  'artist': 'Drexciya',                                          'song': 'Andreaen Sand Dunes'},
+			{'start': 2604, 'end': 2813,  'artist': 'Jay-Z',                                              'song': 'Dead Presidents II'},
+			{'start': 2814, 'end': 3105,  'artist': 'Frank Ocean',                                        'song': 'Crack Rock'},
+			{'start': 3106, 'end': 3315,  'artist': 'MC Mack',                                            'song': 'EZ Come, EZ Go'},
+			{'start': 3316, 'end': 3480,  'artist': 'Aphex Twin',                                         'song': 'IZ-US'},
+			{'start': 3481, 'end': 3668,  'artist': 'Burial',                                             'song': 'Hiders'},
+			{'start': 3669, 'end': 4006,  'artist': 'Future',                                             'song': 'Codeine Crazy'},
+			{'start': 4007, 'end': 4217,  'artist': 'Frank Ocean',                                        'song': 'Chanel'},
+			{'start': 4218, 'end': 4387,  'artist': 'Lil Uzi Vert',                                        'song': 'For Real'},
+			{'start': 4388, 'end': 4586,  'artist': 'Migos',                                              'song': 'First 48'},
+			{'start': 4587, 'end': 4768,  'artist': 'Suspect',                                            'song': 'FBG'},
+			{'start': 4769, 'end': 5134,  'artist': 'Frank Ocean',                                        'song': 'Nights'},
+			{'start': 5135, 'end': 5288,  'artist': 'Gunna feat. Playboi Carti',                        'song': 'YSL'},
+			{'start': 5289, 'end': 5526,  'artist': 'Chief Keef feat. King Louie',                       'song': 'Winnin\''},
+			{'start': 5527, 'end': 5666,  'artist': 'Lil Sko',                                             'song': 'Miss White Cocaine'},
+			{'start': 5667, 'end': 5871,  'artist': 'Jme feat. Giggs',                                    'song': 'Man Don\'t Care'},
+			{'start': 5872, 'end': 5987,  'artist': '(Sandy) Alex G',                                     'song': 'Master'},
+			{'start': 5988, 'end': 6139,  'artist': 'Frank Ocean',                                        'song': 'Pretty Sweet' }
+		],
+		'videoId': '-tVumJBaTWY'
+	},
+	Los_Santos_Underground_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Los_Santos_Underground_Radio',
+		'length': 16734,
+		'logoNumber': '1',
+		'logoPosition': [5,0],
+		'name': 'Los Santos Underground Radio',
+		'playing': false,
+		'stationNumber': '16',
+		'timestamps': [
+			{'start': 0, 'end': 294, 'artist': 'Am$trad Billionaire', 'song': 'The Plan'},
+			{'start': 295, 'end': 617, 'artist': 'Ara Koufax', 'song': 'Natural States (Edit)'},
+			{'start': 618, 'end': 975, 'artist': 'Swayzak', 'song': 'In the Car Crash (Headgear \'Always Crashing In The Same Car\' Mix)'},
+			{'start': 976, 'end': 1163, 'artist': 'D. Lynnwood', 'song': 'Bitcoins (Original Mix)'},
+			{'start': 1164, 'end': 1483, 'artist': 'Bryan Ferry', 'song': 'Don\'t Stop the Dance (Todd Terje Remix)'},
+			{'start': 1484, 'end': 1804, 'artist': 'Denis Horvat', 'song': 'Madness Of Many'},
+			{'start': 1805, 'end': 2157, 'artist': 'Johannes Brecht', 'song': 'Page Blanche'},
+			{'start': 2158, 'end': 2430, 'artist': 'Solomun', 'song': 'Ich Muss Los'},
+			{'start': 2431, 'end': 2640, 'artist': 'Matthew Dear', 'song': 'Monster'},
+			{'start': 2641, 'end': 2884, 'artist': 'Truncate', 'song': 'WRKTRX3'},
+			{'start': 2885, 'end': 3158, 'artist': 'Floorplan', 'song': 'Spin (Original Mix)'},
+			{'start': 3159, 'end': 3450, 'artist': 'Cevin Fisher', 'song': 'The Freaks Come Out (Original 2000 Freak Mix)'},
+			{'start': 3451, 'end': 3706, 'artist': 'Chris Lum', 'song': 'You\'re Mine (Clean Version)'},
+			{'start': 3707, 'end': 3949, 'artist': 'Alex Metric & Ten Ven', 'song': 'The Q'},
+			{'start': 3950, 'end': 4182, 'artist': 'Solomun', 'song': 'Customer Is King'},
+			{'start': 4183, 'end': 4454, 'artist': 'Adam Port', 'song': 'Planet 9'},
+			{'start': 4455, 'end': 4870, 'artist': 'Dubfire', 'song': 'The End To My Beginning'},
+			{'start': 4871, 'end': 5222, 'artist': 'Leonard Cohen', 'song': 'You Want It Darker (Solomun Remix)'},
+			{'start': 5223, 'end': 5300, 'artist': 'Tale of Us', 'song': 'Overture'},
+			{'start': 5301, 'end': 5498, 'artist': 'Tale of Us', 'song': '1911'},
+			{'start': 5499, 'end': 5601, 'artist': 'Tale of Us', 'song': 'Trevor\'s Dream'},
+			{'start': 5602, 'end': 5849, 'artist': 'Tale of Us', 'song': 'Vinewood Blues'},
+			{'start': 5850, 'end': 6035, 'artist': 'Tale of Us', 'song': 'Anywhere'},
+			{'start': 6036, 'end': 6260, 'artist': 'Tale of Us', 'song': 'Symphony of the Night'},
+			{'start': 6261, 'end': 6445, 'artist': 'Tale of Us', 'song': 'Another World'},
+			{'start': 6446, 'end': 6677, 'artist': 'Tale of Us', 'song': 'The Portal'},
+			{'start': 6678, 'end': 6956, 'artist': 'Tale of Us', 'song': 'Solitude'},
+			{'start': 6957, 'end': 7224, 'artist': 'Tale of Us', 'song': 'Morgan\'s Fate'},
+			{'start': 7225, 'end': 7436, 'artist': 'Tale of Us', 'song': 'Fisherman\'s Horizon'},
+			{'start': 7437, 'end': 7587, 'artist': 'Tale of Us', 'song': 'Myst'},
+			{'start': 7588, 'end': 7767, 'artist': 'Tale of Us', 'song': 'Seeds'},
+			{'start': 7768, 'end': 8004, 'artist': 'Tale of Us', 'song': 'Endless Journey'},
+			{'start': 8005, 'end': 8186, 'artist': 'Tale of Us', 'song': 'Valkyr'},
+			{'start': 8187, 'end': 8322, 'artist': 'Tale of Us', 'song': 'In Hyrule'},
+			{'start': 8323, 'end': 8549, 'artist': 'Tale of Us', 'song': 'Disgracelands'},
+			{'start': 8550, 'end': 8800, 'artist': 'Tale of Us', 'song': 'Heart of Darkness'},
+			{'start': 8801, 'end': 9058, 'artist': 'Random Factor', 'song': 'Convergence'},
+			{'start': 9059, 'end': 9315, 'artist': 'Caravaca', 'song': 'Yes I Do'},
+			{'start': 9316, 'end': 9610, 'artist': 'Warp Factor 9', 'song': 'The Atmospherian (Tornado Wallace Remix)'},
+			{'start': 9611, 'end': 9798, 'artist': 'Mashrou\' Leila', 'song': 'Roman (Bas Ibellini Remix)'},
+			{'start': 9799, 'end': 10006, 'artist': 'Future Four', 'song': 'Connection (I:Cube Rework)'},
+			{'start': 10007, 'end': 10208, 'artist': 'Rite De Passage', 'song': 'Quinquerime'},
+			{'start': 10209, 'end': 10370, 'artist': 'The Egyptian Lover', 'song': 'Electro Pharaoh (Instrumental)'},
+			{'start': 10371, 'end': 10676, 'artist': 'Marcus L', 'song': 'Telstar (Original Mix)'},
+			{'start': 10677, 'end': 10952, 'artist': 'Romanthony', 'song': 'Bring U Up (Deetron Edit)'},
+			{'start': 10953, 'end': 11233, 'artist': 'Solar', 'song': '5 Seconds'},
+			{'start': 11234, 'end': 11549, 'artist': 'Sharif Laffrey', 'song': 'And Dance'},
+			{'start': 11550, 'end': 11714, 'artist': 'Ron Hardy', 'song': 'Sensation (Dub)'},
+			{'start': 11715, 'end': 11933, 'artist': 'Aux 88', 'song': 'Sharivari 2013 (Digital Original Aux 88 Mix)'},
+			{'start': 11934, 'end': 12290, 'artist': 'Oni Ayhun', 'song': 'OAR003-B (Original Mix)'},
+			{'start': 12291, 'end': 12625, 'artist': 'Tuff City Kids and Joe Goddard', 'song': 'Reach Out Your Hand (Erol Alkan Rework)'},
+			{'start': 12626, 'end': 12830, 'artist': 'Ron Hardy', 'song': 'Sensation'},
+			{'start': 12831, 'end': 13006, 'artist': 'Derrick Carter', 'song': 'Where U At?'},
+			{'start': 13007, 'end': 13321, 'artist': 'Tiga', 'song': 'Bugatti'},
+			{'start': 13322, 'end': 13629, 'artist': 'Metro Area', 'song': 'Miura'},
+			{'start': 13630, 'end': 13835, 'artist': 'The Black Madonna', 'song': 'A Jealous Heart Never Rests'},
+			{'start': 13836, 'end': 14182, 'artist': 'Art of Noise', 'song': 'Beat Box'},
+			{'start': 14183, 'end': 14518, 'artist': 'The Black Madonna feat. Jamie Principle', 'song': 'We Still Believe'},
+			{'start': 14519, 'end': 14806, 'artist': 'Nancy Martin', 'song': 'Can\'t Believe'},
+			{'start': 14807, 'end': 14984, 'artist': 'P-Funk All Stars', 'song': 'Hydraulic Pump (Part III)'},
+			{'start': 14985, 'end': 15119, 'artist': 'Steve Poindexter', 'song': 'Computer Madness'},
+			{'start': 15120, 'end': 15482, 'artist': 'Ten City', 'song': 'Devotion'},
+			{'start': 15483, 'end': 15936, 'artist': 'The Black Madonna', 'song': 'We Can Never Be Apart'},
+			{'start': 15937, 'end': 16176, 'artist': 'Joe Jackson', 'song': 'Steppin\' Out'},
+			{'start': 16177, 'end': 16734, 'artist': 'The Black Madonna', 'song': 'He Is the Voice I Hear' }
+		],
+		'videoId': 'I2Xjuz-mnN0'
+	},
+	iFruit_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'iFruit_Radio',
+		'length': 5201,
+		'logoNumber': '1',
+		'logoPosition': [4,0],
+		'name': 'iFruit Radio',
+		'playing': false,
+		'stationNumber': '17',
+		'timestamps': [
+			{'start': 8,    'end': 162,   'artist': 'Danny Brown',                                                   'song': 'Dance in the Water'},
+			{'start': 163,  'end': 263,   'artist': 'Pop Smoke',                                                    'song': '100k On A Coupe'},
+			{'start': 264,  'end': 395,   'artist': 'slowthai',                                                    'song': 'I Need'},
+			{'start': 396,  'end': 517,   'artist': 'ScHoolboy Q',                                                 'song': 'Numb Numb Juice'},
+			{'start': 518,  'end': 659,   'artist': 'Shoreline Mafia',                                             'song': 'Wings'},
+			{'start': 660,  'end': 861,   'artist': 'Megan Thee Stallion feat. DaBaby',                            'song': 'Cash Shit'},
+			{'start': 862,  'end': 1107,  'artist': 'The Egyptian Lover',                                          'song': 'Everything She Wants'},
+			{'start': 1108, 'end': 1267,  'artist': 'Denzel Curry & YBN Cordae',                                   'song': 'Alienz'},
+			{'start': 1268, 'end': 1458,  'artist': 'Freddie Gibbs & Madlib',                                      'song': 'Crime Pays'},
+			{'start': 1459, 'end': 1701,  'artist': 'Naira Marley',                                                 'song': 'Opotoyi (Marlians)'},
+			{'start': 1702, 'end': 1867,  'artist': 'Baauer and Channel Tres feat. Danny Brown',                  'song': 'Ready to Go'},
+			{'start': 1868, 'end': 2035,  'artist': 'DaBaby',                                                      'song': 'BOP'},
+			{'start': 2036, 'end': 2216,  'artist': 'DaBaby feat. Kevin Gates',                                     'song': 'POP STAR'},
+			{'start': 2217, 'end': 2481,  'artist': 'Yung Thug feat. Gunna and Travis Scott',                      'song': 'Hot (Remix)'},
+			{'start': 2482, 'end': 2683,  'artist': 'D Double E & Watch the Ride feat. DJ Die, Dismantle and DJ Randall', 'song': 'Original Format'},
+			{'start': 2684, 'end': 2920,  'artist': 'Alkaline',                                                    'song': 'With the Thing'},
+			{'start': 2921, 'end': 3119,  'artist': 'Skepta & AJ Tracey',                                           'song': 'Kiss and Tell'},
+			{'start': 3120, 'end': 3295,  'artist': 'City Girls',                                                  'song': 'Act Up'},
+			{'start': 3296, 'end': 3442,  'artist': 'Kranium feat. AJ Tracey',                                      'song': 'Money in the Bank'},
+			{'start': 3443, 'end': 3605,  'artist': 'Skepta feat. Nafe Smalls',                                    'song': 'Greaze Mode'},
+			{'start': 3606, 'end': 3800,  'artist': 'Travis Scott',                                                'song': 'HIGHEST IN THE ROOM'},
+			{'start': 3801, 'end': 4008,  'artist': 'Headie One feat. Skepta',                                     'song': 'Back to Basics (Floating Points Remix)'},
+			{'start': 4009, 'end': 4139,  'artist': 'ESSIE GANG feat. SQ Diesel',                                  'song': 'Pattern Chanel'},
+			{'start': 4140, 'end': 4376,  'artist': 'Koffee feat. Gunna',                                           'song': 'W'},
+			{'start': 4377, 'end': 4584,  'artist': 'JME feat. Giggs',                                             'song': 'Knock Your Block Off'},
+			{'start': 4585, 'end': 4781,  'artist': 'D-Block Europe',                                              'song': 'Kitchen Kings'},
+			{'start': 4782, 'end': 4991,  'artist': 'J Hus',                                                       'song': 'Must Be'},
+			{'start': 4992, 'end': 5201,  'artist': 'Burna Boy feat. Zlatan',                                     'song': 'Killin Dem' }
+		],
+		'videoId': 'fpvJaphZ2_g'
+	},
+	Self_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': false,
+		'id': 'Self_Radio',
+		'length': 0,
+		'logoNumber': '1',
+		'logoPosition': [4,3],
+		'name': 'Self Radio',
+		'playing': false,
+		'stationNumber': '18',
+		'timestamps': [
+			{'start': 0,    'end': 0,  'artist': nbsp, 'song': nbsp }
+		],
+		'videoId': ''
+	},
+	Still_Slipping_Los_Santos: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Still_Slipping_Los_Santos',
+		'length': 4364,
+		'logoNumber': '6',
+		'logoPosition': [0,0],
+		'name': 'Still Slipping Los Santos',
+		'playing': false,
+		'stationNumber': '19',
+		'timestamps': [
+			{'start': 0,    'end': 127,  'artist': 'DJ Nigga Fox',              'song': '5 Violinos'},
+			{'start': 128,  'end': 283,  'artist': 'Mr. Mankwa',                 'song': 'Feediback'},
+			{'start': 284,  'end': 333,  'artist': 'Mr. Mitch',                  'song': 'Not Modular'},
+			{'start': 334,  'end': 519,  'artist': 'Josi Devi l',                'song': 'The Devil\'s Dance'},
+			{'start': 520,  'end': 744,  'artist': 'Kemikal',                    'song': 'A Wah!'},
+			{'start': 745,  'end': 837,  'artist': 'Joy Orbison',                'song': 'COYP'},
+			{'start': 838,  'end': 960,  'artist': 'Cruel Santino / Robert Fleck','song': 'Sparky / Hi Press (Dub)'},
+			{'start': 961,  'end': 1099, 'artist': 'Pa Salieu feat. Boy Boy',     'song': 'No Warnin\''},
+			{'start': 1100, 'end': 1254, 'artist': 'L U C Y',                    'song': 'ALMOST BLUE'},
+			{'start': 1255, 'end': 1402, 'artist': 'Time Cow & RTKAL',           'song': 'Elephant Man'},
+			{'start': 1403, 'end': 1547, 'artist': 'DJ Scud',                    'song': 'No Love'},
+			{'start': 1548, 'end': 1744, 'artist': 'Frankel & Harper',           'song': 'Trimmers (Instinct (UK) Remix)'},
+			{'start': 1745, 'end': 1964, 'artist': 'Horsepower Productions',      'song': 'Givin\' Up On Love'},
+			{'start': 1965, 'end': 2088, 'artist': 'Blanco',                     'song': 'Shippūden'},
+			{'start': 2089, 'end': 2202, 'artist': 'Pearly',                     'song': 'Polar'},
+			{'start': 2203, 'end': 2339, 'artist': 'BYANO DJ',                   'song': 'Digdim Patrol 2016'},
+			{'start': 2340, 'end': 2528, 'artist': 'Instinct (UK)',              'song': 'Operation + Kay-O — WHIP (Acapella)'},
+			{'start': 2529, 'end': 2744, 'artist': 'Overmono',                   'song': 'Pieces of 8'},
+			{'start': 2745, 'end': 2923, 'artist': 'Joy Orbison & Overmono',     'song': 'Bromley'},
+			{'start': 2924, 'end': 3075, 'artist': 'Mez',                        'song': 'Babylon Can\'t Roll'},
+			{'start': 3076, 'end': 3132, 'artist': 'Spooky',                     'song': 'Joyride'},
+			{'start': 3133, 'end': 3252, 'artist': 'Céline Gillain',             'song': 'Wealthy Humans'},
+			{'start': 3253, 'end': 3336, 'artist': 'Kwengface',                  'song': 'Mad About Bars'},
+			{'start': 3337, 'end': 3469, 'artist': 'M1llionz',                   'song': 'No Rap Cap'},
+			{'start': 3470, 'end': 3628, 'artist': 'BackRoad Gee',               'song': 'Party Popper'},
+			{'start': 3629, 'end': 3730, 'artist': 'Waifer',                     'song': 'Shower Hour'},
+			{'start': 3731, 'end': 3909, 'artist': 'Kay-O & Joy Orbison',       'song': 'Movements'},
+			{'start': 3910, 'end': 4127, 'artist': 'RAP',                        'song': 'Mad Friday'},
+			{'start': 4128, 'end': 4241, 'artist': 'Thomas Bush',                'song': 'Presence: Martin'},
+			{'start': 4242, 'end': 4364, 'artist': 'POiSON ANNA',                'song': 'SUBMiSSiON' }
+		],
+		'videoId': 'P3qixldzDow'
+	},
+	Los_Santos_Rock_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Los_Santos_Rock_Radio',
+		'length': 8971,
+		'logoNumber': '1',
+		'logoPosition': [3,0],
+		'name': 'Los Santos Rock Radio',
+		'playing': false,
+		'stationNumber': '20',
+		'timestamps': [
+			{'start': 7,    'end': 279,   'artist': 'Simple Minds',                                  'song': 'All the Things She Said'},
+			{'start': 280,  'end': 443,   'artist': 'The Greg Kihn Band',                           'song': 'The Breakup Song (They Don\'t Write \'Em)'},
+			{'start': 444,  'end': 665,   'artist': 'Elton John',                                     'song': 'Saturday Night\'s Alright (For Fighting)'},
+			{'start': 666,  'end': 888,   'artist': 'Pat Benatar',                                    'song': 'Shadows of the Night'},
+			{'start': 889,  'end': 1131,  'artist': 'Belinda Carlisle',                               'song': 'Circle in the Sand'},
+			{'start': 1132, 'end': 1292,  'artist': 'Mountain',                                       'song': 'Mississippi Queen'},
+			{'start': 1293, 'end': 1597,  'artist': 'Starship',                                       'song': 'We Built This City'},
+			{'start': 1598, 'end': 1802,  'artist': 'The Doobie Brothers',                           'song': 'What a Fool Believes'},
+			{'start': 1803, 'end': 2048,  'artist': 'Bob Seger & The Silver Bullet Band',            'song': 'Hollywood Nights'},
+			{'start': 2049, 'end': 2368,  'artist': 'Kansas',                                         'song': 'Carry On Wayward Son'},
+			{'start': 2369, 'end': 2585,  'artist': 'Def Leppard',                                    'song': 'Photograph'},
+			{'start': 2586, 'end': 2723,  'artist': 'Creedence Clearwater Revival',                   'song': 'Fortunate Son'},
+			{'start': 2724, 'end': 2935,  'artist': 'Kenny Loggins',                                  'song': 'I\'m Free (Heaven Helps the Man)'},
+			{'start': 2936, 'end': 3249,  'artist': 'Phil Collins',                                   'song': 'I Don\'t Care Anymore'},
+			{'start': 3250, 'end': 3445,  'artist': 'Julian Lennon',                                  'song': 'Too Late for Goodbyes'},
+			{'start': 3446, 'end': 3735,  'artist': 'Boston',                                         'song': 'Peace of Mind'},
+			{'start': 3736, 'end': 3986,  'artist': 'Bob Seger & The Silver Bullet Band',            'song': 'Night Moves'},
+			{'start': 3987, 'end': 4195,  'artist': 'Kenny Loggins',                                  'song': 'Danger Zone'},
+			{'start': 4196, 'end': 4550,  'artist': 'Gerry Rafferty',                                 'song': 'Baker Street'},
+			{'start': 4551, 'end': 4811,  'artist': 'Stevie Nicks',                                   'song': 'I Can\'t Wait'},
+			{'start': 4812, 'end': 5031,  'artist': 'Chicago',                                        'song': 'If You Leave Me Now'},
+			{'start': 5032, 'end': 5227,  'artist': 'The Alan Parsons Project',                      'song': 'I Wouldn\'t Want to Be Like You'},
+			{'start': 5228, 'end': 5457,  'artist': 'Don Johnson',                                    'song': 'Heartbeat'},
+			{'start': 5458, 'end': 5732,  'artist': 'Alannah Myles',                                  'song': 'Black Velvet'},
+			{'start': 5733, 'end': 5947,  'artist': 'ZZ Top',                                         'song': 'Gimme All Your Lovin\''},
+			{'start': 5948, 'end': 6094,  'artist': 'Small Faces',                                    'song': 'Ogdens\' Nut Gone Flake'},
+			{'start': 6095, 'end': 6304,  'artist': 'Humble Pie',                                     'song': '30 Days in the Hole'},
+			{'start': 6305, 'end': 6481,  'artist': 'Steve Miller Band',                              'song': 'Rock\'n Me'},
+			{'start': 6482, 'end': 6793,  'artist': 'Queen',                                          'song': 'Radio Ga Ga'},
+			{'start': 6794, 'end': 7022,  'artist': 'Survivor',                                       'song': 'Burning Heart'},
+			{'start': 7023, 'end': 7545,  'artist': 'Yes',                                            'song': 'Roundabout'},
+			{'start': 7546, 'end': 7773,  'artist': 'The Cult',                                       'song': 'Rain'},
+			{'start': 7774, 'end': 8001,  'artist': 'Harry Chapin',                                  'song': 'Cat\'s in the Cradle'},
+			{'start': 8002, 'end': 8244,  'artist': 'Billy Squier',                                  'song': 'Lonely Is the Night'},
+			{'start': 8245, 'end': 8463,  'artist': 'Robert Plant',                                  'song': 'Big Log'},
+			{'start': 8464, 'end': 8753,  'artist': 'Steve Winwood',                                 'song': 'Higher Love'},
+			{'start': 8754, 'end': 8971,  'artist': 'Foreigner',                                     'song': 'Dirty White Boy' }
+		],
+		'videoId': 'fZPV-9GlM-c'
+	},
+	Non_Stop_Pop_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Non_Stop_Pop_FM',
+		'length': 13878,
+		'logoNumber': '1',
+		'logoPosition': [0,1],
+		'name': 'Non-Stop-Pop FM',
+		'playing': false,
+		'stationNumber': '21',
+		'timestamps': [
+			{'start': 6, 'end': 244, 'artist': 'Fergie feat. Ludacris', 'song': 'Glamorous'},
+			{'start': 245, 'end': 479, 'artist': 'Real Life', 'song': 'Send Me An Angel \'89'},
+			{'start': 480, 'end': 702, 'artist': 'Corona', 'song': 'The Rhythm of the Night (Rapino Bros. 7\' Single)'},
+			{'start': 703, 'end': 894, 'artist': 'Kelly Rowland', 'song': 'Work (Freemasons Remix)'},
+			{'start': 895, 'end': 1127, 'artist': 'Simply Red', 'song': 'Something Got Me Started (Hurley\'s House Mix)'},
+			{'start': 1128, 'end': 1324, 'artist': 'The Blow Monkeys & Kym Mazelle', 'song': 'Wait'},
+			{'start': 1325, 'end': 1546, 'artist': 'Backstreet Boys', 'song': 'I Want It That Way'},
+			{'start': 1547, 'end': 1842, 'artist': 'Dirty Vegas', 'song': 'Days Go By'},
+			{'start': 1843, 'end': 2070, 'artist': 'Moloko', 'song': 'The Time Is Now'},
+			{'start': 2071, 'end': 2289, 'artist': 'Amerie', 'song': '1 Thing'},
+			{'start': 2290, 'end': 2560, 'artist': 'Robbie Williams & Kylie Minogue', 'song': 'Kids'},
+			{'start': 2561, 'end': 2771, 'artist': 'Maroon 5 feat. Christina Aguilera', 'song': 'Moves like Jagger'},
+			{'start': 2772, 'end': 2976, 'artist': 'N-Joi', 'song': 'Anthem'},
+			{'start': 2977, 'end': 3208, 'artist': 'Wham!', 'song': 'Everything She Wants'},
+			{'start': 3209, 'end': 3448, 'artist': 'Mis-Teeq', 'song': 'Scandalous'},
+			{'start': 3449, 'end': 3671, 'artist': 'Mike Posner', 'song': 'Cooler Than Me (Single Mix)'},
+			{'start': 3672, 'end': 3893, 'artist': 'Lady Gaga', 'song': 'Applause'},
+			{'start': 3894, 'end': 4141, 'artist': 'All Saints', 'song': 'Pure Shores'},
+			{'start': 4142, 'end': 4441, 'artist': 'Jamiroquai', 'song': 'Alright'},
+			{'start': 4442, 'end': 4576, 'artist': 'Modjo', 'song': 'Lady (Hear Me Tonight)'},
+			{'start': 4577, 'end': 4786, 'artist': 'Lorde', 'song': 'Tennis Court'},
+			{'start': 4787, 'end': 4997, 'artist': 'Taylor Dayne', 'song': 'Tell It to My Heart'},
+			{'start': 4998, 'end': 5232, 'artist': 'Sly Fox', 'song': 'Let\'s Go All the Way'},
+			{'start': 5233, 'end': 5461, 'artist': 'Robyn feat. Kleerup', 'song': 'With Every Heartbeat'},
+			{'start': 5462, 'end': 5730, 'artist': 'Bobby Brown', 'song': 'On Our Own'},
+			{'start': 5731, 'end': 5957, 'artist': 'INXS', 'song': 'New Sensation'},
+			{'start': 5958, 'end': 6188, 'artist': 'Naked Eyes', 'song': 'Promises, Promises'},
+			{'start': 6189, 'end': 6419, 'artist': 'M.I.A.', 'song': 'Bad Girls'},
+			{'start': 6420, 'end': 6696, 'artist': 'Hall & Oates', 'song': 'Adult Education'},
+			{'start': 6697, 'end': 6920, 'artist': 'Sneaker Pimps', 'song': '6 Underground'},
+			{'start': 6921, 'end': 7152, 'artist': 'Rihanna', 'song': 'Only Girl (In the World)'},
+			{'start': 7153, 'end': 7368, 'artist': 'Britney Spears', 'song': 'Gimme More'},
+			{'start': 7369, 'end': 7628, 'artist': 'The Black Eyed Peas', 'song': 'Meet Me Halfway'},
+			{'start': 7629, 'end': 7863, 'artist': 'Gorillaz feat. De La Soul', 'song': 'Feel Good Inc.'},
+			{'start': 7864, 'end': 8048, 'artist': 'Living in a Box', 'song': 'Living in a Box'},
+			{'start': 8049, 'end': 8264, 'artist': 'M83', 'song': 'Midnight City'},
+			{'start': 8265, 'end': 8540, 'artist': 'Bronski Beat', 'song': 'Smalltown Boy'},
+			{'start': 8541, 'end': 8750, 'artist': 'Morcheeba', 'song': 'Tape Loop (Original)'},
+			{'start': 8751, 'end': 8980, 'artist': 'Morcheeba', 'song': 'Tape Loop (Shortcheeba Mix)'},
+			{'start': 8981, 'end': 9207, 'artist': 'Pet Shop Boys', 'song': 'West End Girls'},
+			{'start': 9208, 'end': 9404, 'artist': 'Cassie', 'song': 'Me & U'},
+			{'start': 9405, 'end': 9620, 'artist': 'Jane Child', 'song': 'Don\'t Wanna Fall in Love'},
+			{'start': 9621, 'end': 9864, 'artist': 'Stardust', 'song': 'Music Sounds Better with You'},
+			{'start': 9865, 'end': 10087, 'artist': 'Neon Trees', 'song': 'Animal'},
+			{'start': 10088, 'end': 10337, 'artist': 'Cobra Starship feat. Sabi', 'song': 'You Make Me Feel...'},
+			{'start': 10338, 'end': 10534, 'artist': 'Belinda Carlisle', 'song': 'Circle in the Sand'},
+			{'start': 10535, 'end': 10793, 'artist': 'Tears for Fears', 'song': 'Everybody Wants to Rule the World'},
+			{'start': 10794, 'end': 11033, 'artist': 'Miike Snow', 'song': 'Animal'},
+			{'start': 11034, 'end': 11272, 'artist': 'Wilson Phillips', 'song': 'Hold On'},
+			{'start': 11273, 'end': 11489, 'artist': 'Michael Jackson', 'song': 'Jam'},
+			{'start': 11490, 'end': 11849, 'artist': 'Jamiroquai', 'song': 'Love Foolosophy'},
+			{'start': 11850, 'end': 12019, 'artist': 'Olivia Newton-John', 'song': 'Physical'},
+			{'start': 12020, 'end': 12260, 'artist': 'Enrique Iglesias feat. Pitbull', 'song': 'I Like It'},
+			{'start': 12261, 'end': 12540, 'artist': 'Estelle feat. Kanye West', 'song': 'American Boy'},
+			{'start': 12541, 'end': 12795, 'artist': 'Kevin Rudolf feat. Lil Wayne', 'song': 'Let It Rock'},
+			{'start': 12796, 'end': 13047, 'artist': 'Duran Duran', 'song': 'Serious'},
+			{'start': 13048, 'end': 13310, 'artist': 'Seal', 'song': 'Future Love Paradise'},
+			{'start': 13311, 'end': 13493, 'artist': 'Timbaland feat. Keri Hilson & D.O.E.', 'song': 'The Way I Are'},
+			{'start': 13494, 'end': 13665, 'artist': 'Kylie Minogue', 'song': 'Surrender'},
+			{'start': 13666, 'end': 13878, 'artist': 'Supermen Lovers', 'song': 'Starlight' }
+		],
+		'videoId': 'Fjp0wu3lEHk'
+	},
+	Radio_Los_Santos: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Radio_Los_Santos',
+		'length': 21384,
+		'logoNumber': '1',
+		'logoPosition': [2,2],
+		'name': 'Radio Los Santos',
+		'playing': false,
+		'stationNumber': '22',
+		'timestamps': [
+			{'start': 10, 'end': 201, 'artist': 'G-Side feat. G-Mane', 'song': 'Relaxin\''},
+			{'start': 202, 'end': 399, 'artist': 'Kendrick Lamar', 'song': 'A.D.H.D'},
+			{'start': 400, 'end': 685, 'artist': 'Ace Hood feat. Future & Rick Ross', 'song': 'Bugatti'},
+			{'start': 686, 'end': 850, 'artist': 'Tia Corine', 'song': 'Coochie'},
+			{'start': 851, 'end': 1035, 'artist': 'Young Scooter feat. Trinidad James', 'song': 'I Can\'t Wait'},
+			{'start': 1036, 'end': 1167, 'artist': 'Tyler, The Creator feat. 42 Dugg', 'song': 'LEMONHEAD'},
+			{'start': 1168, 'end': 1346, 'artist': 'Young Stoner Life, Young Thug & Gunna', 'song': 'Ski'},
+			{'start': 1347, 'end': 1624, 'artist': 'ScHoolboy Q feat. Kendrick Lamar', 'song': 'Collard Greens'},
+			{'start': 1625, 'end': 1915, 'artist': 'Young Scooter feat. Gucci Mane', 'song': 'Work'},
+			{'start': 1916, 'end': 2147, 'artist': 'Kodak Black feat. Travis Scott & Offset', 'song': 'ZEZE'},
+			{'start': 2148, 'end': 2452, 'artist': 'Dr. Dre feat. Nipsey Hustle & Ty Dolla Sign', 'song': 'Diamond Mind'},
+			{'start': 2453, 'end': 2640, 'artist': 'Ab-Soul feat. ScHoolboy Q', 'song': 'Hunnid Stax'},
+			{'start': 2641, 'end': 2848, 'artist': 'Gangrene', 'song': 'Bassheads'},
+			{'start': 2849, 'end': 3057, 'artist': 'BJ the Chicago Kid feat. Freddie Gibbs & Problem', 'song': 'Smokin\' and Ridin\''},
+			{'start': 3058, 'end': 3217, 'artist': 'Saweetie', 'song': 'My Type'},
+			{'start': 3218, 'end': 3398, 'artist': 'Big Sean & Hit-Boy', 'song': 'What a Life'},
+			{'start': 3399, 'end': 3684, 'artist': 'Chuck Inglish feat. Ab-Soul & Mac Miller', 'song': 'Came Thru/Easily'},
+			{'start': 3685, 'end': 3886, 'artist': 'Vince Staples feat. Juicy J', 'song': 'Big Fish'},
+			{'start': 3887, 'end': 4073, 'artist': 'A$AP Ferg', 'song': 'Plain Jane'},
+			{'start': 4074, 'end': 4285, 'artist': 'Marion Band$ feat. Nipsey Hussle', 'song': 'Hold Up'},
+			{'start': 4286, 'end': 4583, 'artist': 'Fredo Santana feat. Chief Keef, Ball Out & Tadoe', 'song': 'Go Live'},
+			{'start': 4584, 'end': 4808, 'artist': 'Clyde Carson feat. The Team', 'song': 'Slow Down'},
+			{'start': 4809, 'end': 5088, 'artist': 'Ab-Soul feat. Kendrick Lamar', 'song': 'Illuminate'},
+			{'start': 5089, 'end': 5259, 'artist': 'Travis Scott feat. 2 Chainz & T.I.', 'song': 'Upper Echelon'},
+			{'start': 5260, 'end': 5482, 'artist': '2 Chainz feat. Ty Dolla $ign, Trey Songz & Jhené Aiko', 'song': 'It\'s a Vibe'},
+			{'start': 5483, 'end': 5725, 'artist': 'Skeme', 'song': 'Millions'},
+			{'start': 5726, 'end': 5842, 'artist': 'Mozzy feat. YG', 'song': 'Hoppin\' Out'},
+			{'start': 5843, 'end': 6123, 'artist': 'The Game feat. 2 Chainz & Rick Ross', 'song': 'Ali Bomaye'},
+			{'start': 6124, 'end': 6341, 'artist': 'Freddie Gibbs', 'song': 'Still Livin\''},
+			{'start': 6342, 'end': 6485, 'artist': 'Danny Brown & Action Bronson', 'song': 'Bad News'},
+			{'start': 6486, 'end': 6729, 'artist': 'DJ Esco feat. Future', 'song': 'How It Was'},
+			{'start': 6730, 'end': 6916, 'artist': '100s', 'song': 'Life of a Mack'},
+			{'start': 6917, 'end': 7143, 'artist': 'Migos', 'song': 'Stir Fry'},
+			{'start': 7144, 'end': 7361, 'artist': 'Kendrick Lamar', 'song': 'Swimming Pools (Drank)'},
+			{'start': 7362, 'end': 7594, 'artist': 'Dr. Dre feat. THURZ & Cocoa Sarai', 'song': 'Fallin Up'},
+			{'start': 7595, 'end': 7750, 'artist': 'Mike Dean and Offset', 'song': 'So Fancy'},
+			{'start': 7751, 'end': 7892, 'artist': 'A$AP Rocky feat. Aston Matthews & Joey Fatts', 'song': 'R-Cali'},
+			{'start': 7893, 'end': 8088, 'artist': 'Mike Dean and Rich the Kid', 'song': 'Blue Cheese'},
+			{'start': 8089, 'end': 8330, 'artist': 'Dr. Dre feat. Anderson .Paak, Snoop Dogg & Busta Rhymes', 'song': 'ETA'},
+			{'start': 8331, 'end': 8577, 'artist': 'D-Block Europe & Offset', 'song': 'Chrome Hearts'},
+			{'start': 8578, 'end': 8807, 'artist': 'French Montana feat. Kodak Black', 'song': 'Lockjaw'},
+			{'start': 8808, 'end': 9062, 'artist': 'Danny Brown feat. A$AP Rocky & Zelooperz', 'song': 'Kush Coma'},
+			{'start': 9063, 'end': 9332, 'artist': 'Hit-Boy feat. Dom Kennedy', 'song': 'XL'},
+			{'start': 9333, 'end': 9505, 'artist': 'Polo G feat. Juice WRLD', 'song': 'Flex'},
+			{'start': 9506, 'end': 9693, 'artist': 'A$AP Ferg', 'song': 'Work'},
+			{'start': 9694, 'end': 9893, 'artist': 'Dr. Dre feat. Rick Ross & Anderson .Paak', 'song': 'The Scenic Route'},
+			{'start': 9894, 'end': 10148, 'artist': 'Freddie Gibbs & Mike Dean', 'song': 'Sellin\' Dope'},
+			{'start': 10149, 'end': 10324, 'artist': 'NEZ feat. ScHoolboy Q', 'song': 'Let\'s Get It'},
+			{'start': 10325, 'end': 10497, 'artist': 'Problem feat. Glasses Malone', 'song': 'Say That Then'},
+			{'start': 10498, 'end': 10679, 'artist': 'YG', 'song': 'I\'m a Real 1'},
+			{'start': 10680, 'end': 11001, 'artist': 'Future feat. The Weeknd', 'song': 'Low Life'},
+			{'start': 11002, 'end': 11229, 'artist': 'Gucci Mane feat. Ciara', 'song': 'Too Hood'},
+			{'start': 11230, 'end': 11438, 'artist': 'Problem & IamSu feat. Bad Lucc & Sage The Gemini', 'song': 'Do It Big'},
+			{'start': 11439, 'end': 11616, 'artist': 'Future', 'song': 'Feed Me Dope'},
+			{'start': 11617, 'end': 11851, 'artist': 'Freddie Gibbs feat. Pusha T & Kevin Cossom', 'song': 'Miami Vice'},
+			{'start': 11852, 'end': 12020, 'artist': 'Dr. Dre', 'song': 'Black Privilege'},
+			{'start': 12021, 'end': 12201, 'artist': 'Gucci Mane feat. Trouble', 'song': 'Everyday'},
+			{'start': 12202, 'end': 12474, 'artist': 'Jay Rock feat. Kendrick Lamar', 'song': 'Hood Gone Love It'},
+			{'start': 12475, 'end': 12678, 'artist': 'Roddy Ricch', 'song': 'The Box'},
+			{'start': 12679, 'end': 12949, 'artist': 'Mount Westmore', 'song': 'Big Subwoofer'},
+			{'start': 12950, 'end': 13123, 'artist': 'Jay Rock feat. Kendrick Lamar', 'song': 'Wow Freestyle'},
+			{'start': 13124, 'end': 13336, 'artist': 'Dr. Dre feat. Eminem', 'song': 'Gospel'},
+			{'start': 13337, 'end': 13567, 'artist': 'Freddie Gibbs feat. Juicy J', 'song': 'Pick the Phone Up'},
+			{'start': 13568, 'end': 13776, 'artist': 'Cordae', 'song': 'Kung Fu'},
+			{'start': 13777, 'end': 13987, 'artist': 'Miguel', 'song': 'Adorn'},
+			{'start': 13988, 'end': 14300, 'artist': 'E-40 feat. Slim Thug & Bun B', 'song': 'That Candy Paint'},
+			{'start': 14301, 'end': 14498, 'artist': 'Young Jeezy feat. Freddie Gibbs', 'song': 'Rough'},
+			{'start': 14499, 'end': 14763, 'artist': 'Young Jeezy feat. Freddie Gibbs', 'song': 'Do It for You'},
+			{'start': 14764, 'end': 15111, 'artist': 'Kanye West feat. Big Sean, Pusha T & 2 Chainz', 'song': 'Mercy'},
+			{'start': 15112, 'end': 15375, 'artist': 'Glasses Malone feat. Jay Rock', 'song': 'No Sympathy'},
+			{'start': 15376, 'end': 15601, 'artist': 'Wiz Khalifa', 'song': 'Work Hard, Play Hard'},
+			{'start': 15602, 'end': 15861, 'artist': '2 Chainz feat. Drake', 'song': 'No Lie'},
+			{'start': 15862, 'end': 16099, 'artist': 'WC feat. Young Maylay & Ice Cube', 'song': 'You Know Me'},
+			{'start': 16100, 'end': 16359, 'artist': 'A$AP Rocky feat. Drake, 2 Chainz & Kendrick Lamar', 'song': 'Fuckin\' Problems'},
+			{'start': 16360, 'end': 16638, 'artist': 'Juicy J feat. Lil Wayne & 2 Chainz', 'song': 'Bandz a Make Her Dance'},
+			{'start': 16639, 'end': 16824, 'artist': 'Tyga', 'song': 'Rack City'},
+			{'start': 16825, 'end': 17072, 'artist': 'Wiz Khalifa feat. Lola Monroe', 'song': 'Initiation'},
+			{'start': 17073, 'end': 17269, 'artist': 'Jay Rock', 'song': 'Boomerang'},
+			{'start': 17270, 'end': 17580, 'artist': 'French Montana feat. Rick Ross, Drake & Lil Wayne', 'song': 'Pop That'},
+			{'start': 17581, 'end': 17779, 'artist': 'Clams Casino', 'song': 'Cold War'},
+			{'start': 17780, 'end': 18015, 'artist': 'Meek Mill feat. Rick Ross', 'song': 'Believe It'},
+			{'start': 18016, 'end': 18217, 'artist': '100s', 'song': 'Brick $ell Phone'},
+			{'start': 18218, 'end': 18403, 'artist': 'Waka Flocka Flame', 'song': 'Rooster in My Rari'},
+			{'start': 18404, 'end': 18618, 'artist': '2 Chainz', 'song': 'I\'m Different'},
+			{'start': 18619, 'end': 18803, 'artist': 'Buddy', 'song': 'Awesome Awesome'},
+			{'start': 18804, 'end': 19001, 'artist': 'Mac Miller', 'song': 'Loud'},
+			{'start': 19002, 'end': 19230, 'artist': 'Machine Gun Kelly feat. Waka Flocka Flame', 'song': 'Wild Boy'},
+			{'start': 19231, 'end': 19422, 'artist': 'T.I. feat. Trae tha Truth', 'song': 'What It Do'},
+			{'start': 19423, 'end': 19617, 'artist': 'Chief Keef', 'song': 'Love Sosa'},
+			{'start': 19618, 'end': 19834, 'artist': 'Stevie Stones feat. Yelawolf', 'song': 'Dollar General'},
+			{'start': 19835, 'end': 20101, 'artist': 'The Game feat. Common', 'song': 'Angel'},
+			{'start': 20102, 'end': 20369, 'artist': 'Big K.R.I.T feat. Big Sant & Bun B', 'song': 'Pull Up'},
+			{'start': 20370, 'end': 20522, 'artist': 'Fenix Flexin feat. D-Block Europe', 'song': 'From the Block'},
+			{'start': 20523, 'end': 20711, 'artist': 'Chief Keef feat. A Boogie wit da Hoodie', 'song': 'Glory Bridge'},
+			{'start': 20712, 'end': 20833, 'artist': 'Freddie Gibbs feat. Big Sean & Hit-Boy', 'song': '4 Thangs'},
+			{'start': 20834, 'end': 20996, 'artist': 'Pacman Da Gunman feat. Richard Fisher', 'song': 'Spin Again'},
+			{'start': 20997, 'end': 21190, 'artist': 'Flipp Dinero', 'song': 'Leave Me Alone'},
+			{'start': 21191, 'end': 21384, 'artist': 'Chief Keef', 'song': 'It Ain\'t My Fault' }
+		],
+		'videoId': 'C3_FSXZtRe8'
+	},
+	Channel_X: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Channel_X',
+		'length': 2741,
+		'logoNumber': '1',
+		'logoPosition': [2,0],
+		'name': 'Channel X',
+		'playing': false,
+		'stationNumber': '23',
+		'timestamps': [
+			{'start': 0,    'end': 143,   'artist': 'Redd Kross',                  'song': 'Linda Blair'},
+			{'start': 144,  'end': 331,   'artist': 'Suicidal Tendencies',        'song': 'Subliminal'},
+			{'start': 332,  'end': 526,   'artist': 'D.O.A.',                      'song': 'The Enemy'},
+			{'start': 527,  'end': 650,   'artist': 'T.S.O.L.',                    'song': 'Abolish Government/Silent Majority'},
+			{'start': 651,  'end': 832,   'artist': 'Youth Brigade',              'song': 'Blown Away'},
+			{'start': 833,  'end': 1056,  'artist': 'Black Flag',                  'song': 'My War'},
+			{'start': 1057, 'end': 1167,  'artist': 'Descendents',                'song': 'Pervert'},
+			{'start': 1168, 'end': 1385,  'artist': 'Adolescents',                'song': 'Amoeba'},
+			{'start': 1386, 'end': 1507,  'artist': 'M.D.C.',                      'song': 'John Wayne Was a Nazi'},
+			{'start': 1508, 'end': 1668,  'artist': 'X',                           'song': 'Los Angeles'},
+			{'start': 1669, 'end': 1796,  'artist': 'The Germs',                   'song': 'Lexicon Devil'},
+			{'start': 1797, 'end': 1951,  'artist': 'Circle Jerks',                'song': 'Rock House'},
+			{'start': 1952, 'end': 2083,  'artist': 'Fear',                        'song': 'The Mouth Don\'t Stop (The Trouble With Women Is)'},
+			{'start': 2084, 'end': 2222,  'artist': 'Agent Orange',               'song': 'Bored of You'},
+			{'start': 2223, 'end': 2353,  'artist': 'The Weirdos',                'song': 'Life of Crime'},
+			{'start': 2354, 'end': 2498,  'artist': 'The Zeros',                  'song': 'Don\'t Push Me Around'},
+			{'start': 2499, 'end': 2647,  'artist': 'OFF!',                        'song': 'What\'s Next'},
+			{'start': 2648, 'end': 2741,  'artist': 'D.R.I.',                       'song': 'I Don\'t Need Society' }
+		],
+		'videoId': 'S1-sjuvgo6s'
+	},
+	West_Coast_Talk_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'West_Coast_Talk_Radio',
+		'length': 5815,
+		'logoNumber': '1',
+		'logoPosition': [5,1.99],
+		'name': 'West Coast Talk Radio',
+		'playing': false,
+		'stationNumber': '24',
+		'timestamps': [
+			{'start': 5,    'end': 1178,  'artist': 'The Fernando Show', 'song': nbsp},
+			{'start': 1179, 'end': 3068,  'artist': 'CHAKRA ATTACK', 'song': nbsp},
+			{'start': 3069, 'end': 4481,  'artist': 'CHATTERSPHERE', 'song': nbsp},
+			{'start': 4482, 'end': 5815,  'artist': 'CHAKRA ATTACK', 'song': nbsp }
+		],
+		'videoId': 'IhCFJnaYvnI'
+	},
+	Rebel_Radio: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Rebel_Radio',
+		'length': 3457,
+		'logoNumber': '1',
+		'logoPosition': [0,0],
+		'name': 'Rebel Radio',
+		'playing': false,
+		'stationNumber': '25',
+		'timestamps': [
+			{'start': 35,   'end': 220,   'artist': 'Charles Feathers',                                'song': 'Can\'t Hardly Stand It'},
+			{'start': 221,  'end': 400,   'artist': 'Hank Thompson',                                    'song': 'It Don\'t Hurt Anymore'},
+			{'start': 401,  'end': 639,   'artist': 'Hasil Adkins',                                    'song': 'Get Out Of My Car'},
+			{'start': 640,  'end': 799,   'artist': 'Jerry Reed',                                      'song': 'You Took All The Ramblin Out Of Me'},
+			{'start': 800,  'end': 974,   'artist': 'Johnny Cash',                                     'song': 'General Lee'},
+			{'start': 975,  'end': 1154,  'artist': 'Johnny Paycheck',                                 'song': 'It Won\'t Be Long (And I\'ll Be Hating You)'},
+			{'start': 1155, 'end': 1427,  'artist': 'Ozark Mountain Daredevils',                      'song': 'If You Wanna Get To Heaven'},
+			{'start': 1428, 'end': 1626,  'artist': 'Waylon Jennings',                                'song': 'Are You Sure Hank Done It This Way?'},
+			{'start': 1627, 'end': 1875,  'artist': 'Waylon Jennings',                                'song': 'I Ain\'t Living Long Like This?'},
+			{'start': 1876, 'end': 2125,  'artist': 'Willie Nelson',                                   'song': 'Whiskey River'},
+			{'start': 2126, 'end': 2356,  'artist': 'C.W. McCall',                                     'song': 'Convoy'},
+			{'start': 2357, 'end': 2494,  'artist': 'Charlie Feathers',                                'song': 'Get With It'},
+			{'start': 2495, 'end': 2649,  'artist': 'Homer and Jethro',                                'song': 'She Made Toothpicks Off the Timber Of My Heart'},
+			{'start': 2650, 'end': 2856,  'artist': 'Marvin Jackson',                                  'song': 'Dippin\' Stuff'},
+			{'start': 2857, 'end': 3026,  'artist': 'Ray Price',                                       'song': 'Crazy Arms'},
+			{'start': 3027, 'end': 3217,  'artist': 'Tammy Wynette',                                  'song': 'D.I.V.O.R.C.E'},
+			{'start': 3218, 'end': 3457,  'artist': 'The Highwaymen',                                 'song': 'Highwayman' }
+		],
+		'videoId': 'N12WWl_f3QM'
+	},
+	Soulwax_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'Soulwax_FM',
+		'length': 2566,
+		'logoNumber': '1',
+		'logoPosition': [1,1],
+		'name': 'Soulwax FM',
+		'playing': false,
+		'stationNumber': '26',
+		'timestamps': [
+			{'start': 0,    'end': 158,   'artist': 'Palmbomen',                                   'song': 'Stock (Soulwax Remix) (High Pitch)'},
+			{'start': 159,  'end': 290,   'artist': 'Fatal Error',                                 'song': 'Fatal Error'},
+			{'start': 291,  'end': 369,   'artist': 'Supersempfft',                                'song': 'Let\'s Beam Him Up (High Pitch)'},
+			{'start': 370,  'end': 508,   'artist': 'Mim Suleiman',                                'song': 'Mingi'},
+			{'start': 509,  'end': 638,   'artist': 'FKCLUB',                                       'song': 'The Strange Art (In Flagranti Remix)'},
+			{'start': 639,  'end': 869,   'artist': 'Matias Aguayo',                               'song': 'El Sucu Tucu (Remix)'},
+			{'start': 870,  'end': 966,   'artist': 'Daniel Avery',                                 'song': 'Naive Response (High Pitch)'},
+			{'start': 967,  'end': 1149,  'artist': 'Joe Goddard feat. Valentina',                 'song': 'Gabriel (Soulwax Remix) (Low Pitch)'},
+			{'start': 1150, 'end': 1262,  'artist': 'Daniel Maloso',                                'song': 'Body Music (Original Mix)'},
+			{'start': 1263, 'end': 1394,  'artist': 'Green Velvet & Harvard Bass',                  'song': 'Lazer Beams'},
+			{'start': 1395, 'end': 1490,  'artist': 'Zombie Nation',                                'song': 'Tryouts (Low Pitch)'},
+			{'start': 1491, 'end': 1643,  'artist': 'Tom Rowlands',                                 'song': 'Nothing But Pleasure (High Pitch to Normal Pitch)'},
+			{'start': 1644, 'end': 1825,  'artist': 'Jackson and his Computerband',                 'song': 'Arp #1 (Low Pitch)'},
+			{'start': 1826, 'end': 1975,  'artist': 'Goose',                                         'song': 'Synrise (Soulwax Remix) (Low Pitch)'},
+			{'start': 1976, 'end': 2097,  'artist': 'Transistorcake',                               'song': 'Mr. Croissant Taker (Low Pitch)'},
+			{'start': 2098, 'end': 2232,  'artist': 'Tiga',                                          'song': 'Plush (Jacques Lu Cont Remix)'},
+			{'start': 2233, 'end': 2323,  'artist': 'The Hacker',                                   'song': 'Shockwave (Gesaffelstein Remix)'},
+			{'start': 2324, 'end': 2566,  'artist': 'Pulp',                                          'song': 'After You (Soulwax Remix)' }
+		],
+		'videoId': 'sFwcLC5HC9I'
+	},
+	East_Los_FM: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'East_Los_FM',
+		'length': 2465,
+		'logoNumber': '1',
+		'logoPosition': [1,0],
+		'name': 'East Los FM',
+		'playing': false,
+		'stationNumber': '27',
+		'timestamps': [
+			{'start': 7,    'end': 154,  'artist': 'Los Buitres de Culiacan Sinaloa',  'song': 'El Kocaino'},
+			{'start': 155,  'end': 255,  'artist': 'Mexican Institute of Sound',          'song': 'Es-Toy'},
+			{'start': 256,  'end': 349,  'artist': 'Niña Dioz',                           'song': 'Criminal Sound (El Hijo De La Cumbia Remix)'},
+			{'start': 350,  'end': 503,  'artist': 'La Vida Bohème',                      'song': 'Radio Capital'},
+			{'start': 504,  'end': 636,  'artist': 'Fandango',                            'song': 'Autos, Moda Y Rock N Roll'},
+			{'start': 637,  'end': 838,  'artist': 'Don Cheto',                          'song': 'El Tatuado'},
+			{'start': 839,  'end': 987,  'artist': 'La Sonora Dinamita',                 'song': 'Se Me Perdió La Cadenita'},
+			{'start': 988,  'end': 1218, 'artist': 'She\'s A Tease',                      'song': 'Fiebre De Jack'},
+			{'start': 1219, 'end': 1394, 'artist': 'Maldita Vecindad',                  'song': 'Pachuco'},
+			{'start': 1395, 'end': 1574, 'artist': 'Hechizeros Band',                    'song': 'El Sonidito'},
+			{'start': 1575, 'end': 1778, 'artist': 'Milkman',                            'song': 'Fresco'},
+			{'start': 1779, 'end': 1950, 'artist': 'Jessy Bulbo',                        'song': 'Maldito'},
+			{'start': 1951, 'end': 2121, 'artist': 'La Liga feat. Alika',               'song': 'Tengo El Don'},
+			{'start': 2122, 'end': 2344, 'artist': 'Los Tigres Del Norte',               'song': 'La Granja'},
+			{'start': 2345, 'end': 2465, 'artist': 'Los Ángeles Negros',                 'song': 'El Rey Y Yo' }
+		],
+		'videoId': 'xTpsoTmhdNc'
+	},
+	West_Coast_Classics: {
+		'currentTime': null,
+		'exitTime': 0,
+		'favorite': true,
+		'id': 'West_Coast_Classics',
+		'length': 7292,
+		'logoNumber': '1',
+		'logoPosition': [0,2],
+		'name': 'West Coast Classics',
+		'playing': false,
+		'stationNumber': '28',
+		'timestamps': [
+			{'start': 19,    'end': 277,   'artist': 'CPO Ft MC Ren',                     'song': 'Ballad Of Menace'},
+			{'start': 278,   'end': 577,   'artist': 'Dr. Dre Ft Snoop Dogg',             'song': 'Still DRE'},
+			{'start': 578,   'end': 853,   'artist': 'The Lady Of Rage Ft Snoop Dogg',    'song': 'Afro Puffs'},
+			{'start': 854,   'end': 1072,  'artist': 'Ice Cube',                          'song': 'You Know How We Do It'},
+			{'start': 1073,  'end': 1328,  'artist': 'Snoop Dogg',                        'song': 'Gin & Juice'},
+			{'start': 1329,  'end': 1580,  'artist': 'South Central Cartel',              'song': 'Servin\' Em Heat'},
+			{'start': 1581,  'end': 1802,  'artist': 'Mack 10',                           'song': 'Nothin But The Cavi Hit'},
+			{'start': 1803,  'end': 1994,  'artist': 'NWA',                               'song': 'Appetite For Destruction'},
+			{'start': 1995,  'end': 2174,  'artist': 'Jayo Felony',                       'song': 'Sherm Stick'},
+			{'start': 2175,  'end': 2393,  'artist': 'Warren G',                          'song': 'This Dj'},
+			{'start': 2394,  'end': 2685,  'artist': 'Geto Boys',                         'song': 'Mind Playing Tricks On Me'},
+			{'start': 2686,  'end': 2891,  'artist': 'Westside Connection',               'song': 'Bow Down'},
+			{'start': 2892,  'end': 3174,  'artist': 'King Tee',                          'song': 'Played Like A Piano'},
+			{'start': 3175,  'end': 3431,  'artist': 'Dr. Dre Ft Snoop Dogg & Nate Dogg', 'song': 'The Next Episode'},
+			{'start': 3432,  'end': 3689,  'artist': 'Tha Dogg Pound',                    'song': 'What Would You Do'},
+			{'start': 3690,  'end': 3913,  'artist': 'MC Eiht',                           'song': 'Streight Up Menace'},
+			{'start': 3914,  'end': 4147,  'artist': 'Dj Quik',                           'song': 'Dollaz & Sense'},
+			{'start': 4148,  'end': 4438,  'artist': 'Kurupt',                            'song': 'C-Walk'},
+			{'start': 4439,  'end': 4679,  'artist': 'Kausion Ft Ice Cube',               'song': 'What You Wanna Do'},
+			{'start': 4680,  'end': 4869,  'artist': 'Too $hort',                         'song': 'Wanna Be A Ganster'},
+			{'start': 4870,  'end': 5122,  'artist': 'E-40 Ft The Captain',               'song': 'Save A Hoe'},
+			{'start': 5123,  'end': 5349,  'artist': 'NWA',                               'song': 'Gansta Gansta'},
+			{'start': 5350,  'end': 5639,  'artist': '2Pac Shakur',                       'song': 'Ambitionz Az A Ridah'},
+			{'start': 5640,  'end': 5946,  'artist': 'Luniz',                             'song': 'I Got 5 On It'},
+			{'start': 5947,  'end': 6172,  'artist': 'Spice 1',                           'song': 'The Murda Show'},
+			{'start': 6173,  'end': 6407,  'artist': 'The Conscious Daughters',           'song': 'We Roll'},
+			{'start': 6408,  'end': 6697,  'artist': 'Eazy E',                            'song': 'No More Questions'},
+			{'start': 6698,  'end': 6942,  'artist': 'Compton Most Wanted',               'song': 'Late Nite Hype'},
+			{'start': 6943,  'end': 7292,  'artist': 'Bone Thugs-N-Harmony',              'song': '1st Of Tha Month' }
+		],
+		'videoId': 'wnmg6CfHQ18'
+	}
+};
+
+let stationData_name;
+let stationData_artist;
+let stationData_title;
+let stationData_share;
+
+let stationList = Object.keys(stationData);
+stationList.unshift('');
+
+const stationFavoriteList = stationList.filter((station) => {
+	if (station === '') {
+		return true
+	} else {
+		return stationData[station].favorite;
+	}
+});
+
+let stationSize = getComputedStyle(document.documentElement).getPropertyValue('--station-size').replace('px','');
+
+window.addEventListener('load', () => {
+	radioWheel = document.getElementById('radioWheel');
+	
+	stationData_name = document.querySelector('.stationData#name');
+	stationData_artist = document.querySelector('.stationData#artist');
+	stationData_title = document.querySelector('.stationData#title');
+	stationData_share = document.querySelector('.stationData#share');
+	
+	radioWheel.addEventListener('click', (e) => {
+		const radioStation = e.target.parentElement;
+		if (radioStation.classList.contains('radioStation')) {
+			for (let [station, data] of Object.entries(stationData)) {
+				data.playing = false;
+			};
+			stationData[radioStation.id].playing = true;
+			
+			const nextStation = radioStation.nextElementSibling || radioWheel.firstChild;
+			const startFrom = Number(nextStation.dataset.stationNumber);
+			
+			radioWheelBuild(startFrom);
+			radioWheelConfig();
+		}
+	});
+	
+	radioWheelBuild();
+	
+	for (let i = 0; i <= 3; i++) {
+		radioWheelConfig();
+	}
+	
+	backgroundImage();
+	
+	loadYouTubeAPI();
+	
+	radioWheel.style.visibility = 'visible';
+	document.getElementById('stationData').style.visibility = 'visible';
+});
+window.addEventListener('resize', () => {
+	radioWheelConfig();
+});

@@ -1,0 +1,150 @@
+:root{
+	--station-size: 128px;
+	--background-image: 
+}
+#app{
+	align-items: center;
+	background-color: #000000;
+	cursor: url('data:image/x-icon;base64,AAACAAEAICAAAAAAAACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDuhoGA/8aBgP/GgYD/xoGA/8aBgP/GgYD/xoGA/8aBgP/GgYDugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGAwYaBgPe6urq/+bm5v/i4uL/39/f/9vb2//Y2Nj/1dXV/9PT0/8aBgPhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDYxoGA4fu7u7/6urq/+bm5v/i4uL/39/f/9vb2//Y2Nj/1dXV/xoGA94aBgMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGAwYaBgPex8LC//Hx8f/u7u7/6urq/+bm5v/i4uL/39/f/9vb2//Y2Nj/GgYDhxoGA4cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDYxoGA7T4+Pj/7u7u//Hx8f/u7u7/7u7u/+Li4v/i4uL/4uLi/9vb2/+wrKv/GgYD1QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGAwYaBgPezcnI//v7+//u7u7/7u7u/+7u7v/u7u7/4uLi/+Li4v/i4uL/39/f/9vb2/8aBgPeGgYDMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDYxoGA7T//////f39///////u7u7/7u7u/+7u7v/u7u7/4uLi/+Li4v/i4uL/39/f/xoGA4caBgOHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaBgPez8rK/v///////////////+7u7v/u7u7/7u7u/+7u7v/u7u7/4uLi/+bm5v/i4uL/tbGw/xoGA9UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDYxoGA7T/////z8rK/v//////////////////////////7u7u/+7u7v/u7u7/7u7u/+bm5v/i4uL/GgYD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGAzYaBgO66Obl//////+Ge3r/////////////////////////////////7u7u/+7u7v/u7u7/6urq/+bm5v8aBgP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYDuujm5f///////////xoGA////////////////////////f39//v7+//4+Pj/9fX1//Hx8f/u7u7/6urq/xoGA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaBgP/6Obl/+jm5f8aBgO6GgYD/////////////////////////////f39//v7+//4+Pj/GgYD//Hx8f/u7u7/GgYD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGA7oaBgP/GgYDuhoGAzYaBgP///////////8aBgP///////////8aBgP//f39//v7+/8aBgP/9fX1/8O/v/8aBgO6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGA////////////xoGA////////////xoGA////////f39/xoGA//JxcT/GgYDuhoGAxoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYD/8/Kyv//////GgYD////////////GgYD///////Pysr/GgYD/xoGA7oaBgMaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaBgM2GgYDuhoGA/8aBgP///////////8aBgP/GgYD/xoGA7oaBgM2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGA////////////xoGA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYD////////////GgYD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaBgP///////////8aBgP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoGA////////////xoGA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgYD////////////GgYD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaBgM2GgYD/xoGA7oaBgM2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////////////////////////////////////////////////gB///4Af//+AH///AA///wAP//4AD//+AAf//AAH//wAB//4AAf/8AAH//AAB//xAAf//wAP//8AH///gH///+H////h////4f///+H////h////8///8='), auto;
+	display: flex;
+	font-family: sans-serif;
+	font-weight: bold;
+	height: 100vh;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
+	width: 100vw;
+}
+#backgroundImage{
+	background-color: #000000;
+	background-position: center;
+	background-size: cover;
+	filter: blur(5px);
+	height: calc(100vh + 20px);
+	position: absolute;
+	width: calc(100vw + 20px);
+}
+#backgroundImage.bg1{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://gtav-radio-nine.vercel.app/background/gtasunset.png);
+}
+#backgroundImage.bg2{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.0)), url(../bg/dj2qqcxxudf71.webp);
+}
+#backgroundImage.bg3{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(../bg/lbgcwmiyudf71.webp);
+}
+#backgroundImage.bg4{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(../bg/r0743d6vudf71.webp);
+}
+#backgroundImage.bg5{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://static0.gamerantimages.com/wordpress/wp-content/uploads/2024/10/mixcollage-23-oct-2024-12-31-am-4995.jpg);
+}
+#backgroundImage.bg6{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url(https://static0.gamerantimages.com/wordpress/wp-content/uploads/2024/05/mount-haan-in-grand-theft-auto-5-cropped.jpg);
+}
+#backgroundImage.bg7{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://static0.gamerantimages.com/wordpress/wp-content/uploads/2022/05/Grand-Senora-Desert-Cropped.jpg);
+}
+#backgroundImage.bg8{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://static0.gamerantimages.com/wordpress/wp-content/uploads/2019/11/GTA-movie.jpg);
+}
+#backgroundImage.bg9{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://static0.gamerantimages.com/wordpress/wp-content/uploads/2019/10/vespucci-beach.jpg);
+}
+#backgroundImage.bg10{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url(https://www.gtaboom.com/images/3/33/Screenshots2.jpg);
+}
+#backgroundImage.bg11{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://www.gtaboom.com/images/8/8a/Screenshots3.jpg);
+}
+#backgroundImage.bg12{
+	background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(https://www.gtaboom.com/images/d/df/Screenshots5.jpg);
+}
+
+body{
+	margin: 0;
+	overflow: hidden;
+}
+.logo{
+	background-color: #000000;
+	border-radius: 50%;
+	height: 100%;
+	width: 100%;
+}
+.logo1{
+	background-image: url(https://www.spriters-resource.com/resources/sheets/136/138808.png);
+}
+.logo2{
+	background-image: url(https://static.wikia.nocookie.net/gtawiki/images/0/0e/MediaPlayer-GTAO-HUDIcon.png);
+}
+.logo3{
+	background-image: url(https://media-rockstargames-com.akamaized.net/rockstargames-newsite/img/meta-icons/musiclocker/favicon-180x180.png);
+}
+.logo4{
+	background-image: url(https://is1-ssl.mzstatic.com/image/thumb/SG-MQ-US-032-Image000001/v4/86/2c/e8/862ce8bb-292a-c091-9f79-b0cc378b0ce7/image/305x305cc.webp);
+}
+.logo5{
+	background-color: #ffffff;
+	background-image: url(https://static.wikia.nocookie.net/gtawiki/images/6/61/KultFM-GTAO-Logo.svg);
+}
+.logo6{
+	background-color: #ffffff;
+	background-image: url(https://static.wikia.nocookie.net/gtawiki/images/8/8e/StillSlippingLS-GTAO-Logo.svg);
+	filter: grayscale(1) contrast(100);
+}
+
+
+
+
+#player{
+	bottom: -200px;
+	position: absolute;
+	right: -356px;
+}
+.radioStation{
+	align-items: center;
+	background-color: #000000;
+	border-radius: 50%;
+	display: flex;
+	height: var(--station-size);
+	justify-content: center;
+	opacity: 0.3;
+	position: absolute;
+	width: var(--station-size);
+}
+.radioStation.playing{
+	opacity: 1.0;
+	outline: calc(var(--station-size) / 15) solid #2d6eb9;
+}
+#radioWheel{
+	border-radius: 50%;
+	outline: none;
+	padding: unset;
+	position: absolute;
+	visibility: hidden;
+}
+.stationData{
+	color: #ffffff;
+	margin: 0.1em 0;
+	text-align: center;
+	text-shadow:
+			2px 0px 0px #000000,
+			2px 1px 0px #000000,
+			0px 1px 0px #000000,
+			-2px 1px 0px #000000,
+			-2px 0px 0px #000000,
+			-2px -1px 0px #000000,
+			0px -1px 0px #000000,
+			2px -1px 0px #000000;
+	/*OUTLINE: 1PX DASHED BLUE;*/
+}
+#stationData{
+	transform: scale(0.75,1.75);
+	visibility: hidden;
+	z-index: 1;
+	/*OUTLINE: 1PX DASHED RED;*/
+}
+#stationData #name{}
+#stationData #artist{}
+#stationData #title{}
+#stationData #share{}
