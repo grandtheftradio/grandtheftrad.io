@@ -1614,7 +1614,7 @@ const stationData = {
 		'exitTime': 0,
 		'favorite': true,
 		'id': 'East_Los_FM',
-		'length': 2465,
+		'length': 2702,
 		'logoNumber': '1',
 		'logoPosition': [1,0],
 		'name': 'East Los FM',
@@ -1635,7 +1635,8 @@ const stationData = {
 			{'start': 1779, 'end': 1950, 'artist': 'Jessy Bulbo',                        'song': 'Maldito'},
 			{'start': 1951, 'end': 2121, 'artist': 'La Liga feat. Alika',               'song': 'Tengo El Don'},
 			{'start': 2122, 'end': 2344, 'artist': 'Los Tigres Del Norte',               'song': 'La Granja'},
-			{'start': 2345, 'end': 2465, 'artist': 'Los Ángeles Negros',                 'song': 'El Rey Y Yo' }
+			{'start': 2345, 'end': 2465, 'artist': 'Los Ángeles Negros',                 'song': 'El Rey Y Yo' },
+			{'start': 2466, 'end': 2702, 'artist': 'Toy Selectah',                 		'song': 'El Sabanero Raver' }
 		],
 		'videoId': 'xTpsoTmhdNc'
 	},
