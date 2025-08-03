@@ -1,19 +1,43 @@
-function cLog(writeKey, writeValue) {
-	switch (arguments.length) {
-	case 1:
-		console.log(writeKey);
-		break;
-	default:
-		console.log(writeKey + ": " + writeValue);
-		break;
-	}
-}
+let app;
 
 const backgroundImage = function (){
 	document.getElementById('backgroundImage').className = `bg${Math.floor(Math.random() * (12 - 1 + 1)) + 1}`;
 };
 
 let currentStation = 'Radio_Off';
+
+const enableFullscreen = function (){
+	if (iOS) {
+		fullscreenIcon.style.visibility = 'hidden';
+	} else if (!fullscreenIcon.classList.contains('active')) {
+		if ((window.innerHeight < window.screen.height) || (window.innerWidth < window.screen.width)) {
+			fullscreenIcon.style.visibility = 'visible';
+		} else {
+			fullscreenIcon.style.visibility = 'hidden';
+		}
+	}
+};
+
+let fullscreenIcon;
+
+let interactionMenu;
+
+let iOS;
+
+const loadFavoriteStations = function (){
+	if (localStorage.getItem('favoriteStations')) {
+		const favoriteStations = localStorage.getItem('favoriteStations').split(',');
+		stationList.forEach(station => {
+			if ((station !== '') && (station !== 'Radio_Off') && (station !== 'Self_Radio')) {
+				if (favoriteStations.includes(station)) {
+					stationData[station].favorite = true;
+				} else {
+					stationData[station].favorite = false;
+				}
+			}
+		});
+	}
+};
 
 const loadYouTubeAPI = function (){
 	const iframe_api_js = document.createElement('script');
@@ -23,7 +47,8 @@ const loadYouTubeAPI = function (){
 	GTRV_js.parentNode.insertBefore(iframe_api_js, GTRV_js);
 };
 
-let m;
+let menu;
+
 const monitor = function (){
 	if (stationData[currentStation].id === 'Radio_Off') {
 		stationData_name.innerHTML = stationData[currentStation].name
@@ -34,7 +59,7 @@ const monitor = function (){
 		if (player.getCurrentTime) {
 			stationData_name.innerHTML = stationData[currentStation].name
 			
-			const currentTime = player.getCurrentTime()//;cLog('curentTime',currentTime);
+			const currentTime = player.getCurrentTime()
 			
 			stationData[currentStation].currentTime = currentTime;
 			
@@ -57,16 +82,16 @@ const monitor = function (){
 			});
 		}
 	}
-}
+};
+
+let monitorInterval;
 
 const nbsp = '&nbsp;';
 
 const onYouTubeIframeAPIReady = function() {
 	player = new window.YT.Player('player');
 	youTubeIframeAPIReady = true;
-}
-
-let radioWheel;
+};
 
 const play = function(station){
 	if (!station.playing) {
@@ -81,16 +106,9 @@ const play = function(station){
 				
 				stationData_name.innerHTML = station.name
 				
-				clearInterval(m);
+				clearInterval(monitorInterval);
 			}
 		} else {
-			//const videoId = youTubeVideoId(station.link);
-			/*
-			cLog('videoId',videoId);
-			cLog('station.videoId',station.videoId);
-			cLog('videoId === station.videoId',videoId === station.videoId);
-			cLog('=============================');
-			*/
 			if (station.currentTime === null) {
 				station.currentTime = (Math.random() * station.length)
 			}
@@ -130,7 +148,7 @@ const play = function(station){
 			} else {
 				player.loadVideoById(station.videoId,station.currentTime);
 			}
-			m = setInterval(monitor,500);
+			monitorInterval = setInterval(monitor,500);
 		}
 		
 		const previousStation = currentStation;
@@ -143,6 +161,78 @@ const play = function(station){
 };
 
 let player;
+
+const preferencesMenu = function() {
+	const menu = document.createElement('div');
+	menu.className = 'menu menuItem';
+	
+	const Preferences = document.createElement('div');
+	menu.append(Preferences);
+	Preferences.className = 'preferences menuItem';
+	Preferences.innerHTML = 'Preferences<div id="globe-meridian"><svg viewBox="0 0 100 100" height="100" width="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" /><ellipse rx="20" ry="50" cx="50" cy="50" /><line x1="5" y1="35" x2="95" y2="35" /><line x1="5" y1="65" x2="95" y2="65" /></svg></div>';
+	
+	const radioStationFavorites = document.createElement('div');
+	menu.append(radioStationFavorites);
+	radioStationFavorites.className = 'radioStationFavorites menuItem';
+	radioStationFavorites.innerText = 'RADIO STATION FAVORITES';
+	
+	const favorites = document.createElement('div');
+	menu.append(favorites);
+	favorites.className = 'favorites menuItem';
+	
+	stationList.forEach((station) => {
+		if ((station !== '') && (station !== 'Radio_Off') && (station !== 'Self_Radio')) {
+			const data = stationData[station];
+			
+			const favorite = document.createElement('div');
+			favorites.append(favorite);
+			favorite.className = 'favorite menuItem';
+			favorite.setAttribute('data-favorite',data.id);
+			favorite.addEventListener('click', (e) => {
+				if (e.target.type !== 'checkbox') {
+					const cb = document.querySelector(`.checkbox[data-favorite="${e.target.dataset.favorite}"]`);
+					cb.checked = !cb.checked;
+					cb.dispatchEvent(new Event('change'));
+				}
+			});
+			
+			const stationName = document.createElement('div');
+			favorite.append(stationName);
+			stationName.className = 'stationName menuItem';
+			stationName.setAttribute('data-favorite',data.id);
+			stationName.innerText = data.name;
+			
+			const favoriteCheckbox = document.createElement('div');
+			favorite.append(favoriteCheckbox);
+			favoriteCheckbox.className = 'favoriteCheckbox menuItem';
+			favoriteCheckbox.setAttribute('data-favorite',data.id);
+			
+			const checkbox = document.createElement('input');
+			favoriteCheckbox.append(checkbox);
+			checkbox.setAttribute('type','checkbox');
+			checkbox.setAttribute('name',data.id);
+			checkbox.setAttribute('value',data.id);
+			checkbox.className = 'checkbox menuItem';
+			checkbox.setAttribute('data-favorite',data.id);
+			if (data.favorite) {
+				checkbox.setAttribute('checked','checked');
+			}
+			checkbox.addEventListener('change', (e) => {
+				stationData[e.target.dataset.favorite].favorite = !stationData[e.target.dataset.favorite].favorite;
+				
+				saveFavoriteStations();
+				
+				const nextStation = document.getElementById(currentStation).nextElementSibling || radioWheel.firstChild;
+				const startFrom = Number(nextStation.dataset.stationNumber);
+				radioWheelBuild(startFrom);
+				radioWheelConfig();
+			});
+		}
+	});
+	app.prepend(menu);
+};
+
+let radioWheel;
 
 const radioWheelBuild = function (startFrom = 2){
 	radioWheel.innerHTML = '';
@@ -169,44 +259,41 @@ const radioWheelBuild = function (startFrom = 2){
 			radioStation.append(logo);
 		}
 	}
-}
+};
 
 const radioWheelConfig = function (){
-	/*
-	750/1079 - 81
-	515/1079 - 96
-	*/
-	const favoriteStationCount = (stationFavoriteList.length - 1);
+	const favoriteStationCount = (stationFavoriteList().length - 1);
 	
 	//RADIO WHEEL
 	const h = window.innerHeight;
 	const w = window.innerWidth;
-//	const radioWheelPadding = (((((h > w) ? w : h) / 100) * 35) - (stationSize / 2));
 	
-	let radioWheelPadding = ((((h > w) ? w : h) / 100) * 45);
-	radioWheelPadding -= (((radioWheelPadding * 2) * 0.110) / 2);
+	const radioWheelPaddingRatio = 0.45;
+	const stationSizeRatio = 0.106;
+	const favoriteStationCountMin = 20;
+	const favoriteStationCountRatio = (Math.max(favoriteStationCount,(favoriteStationCountMin + 1)) / stationList.length);
+	
+	let radioWheelPadding = (Math.min(h,w) * radioWheelPaddingRatio);
+	if (window.matchMedia('(min-width:768px) and (min-height:768px)').matches) {
+		radioWheelPadding = (radioWheelPadding * favoriteStationCountRatio);
+	}
+	radioWheelPadding -= (((radioWheelPadding * 2) * stationSizeRatio) / 2);
 	
 	radioWheel.style.padding = `${String(radioWheelPadding)}px`;
 	
 	//STATION BUTTON
 	const radioStation = document.querySelectorAll('.radioStation');
-	const radioWheelCircumference = ((radioWheel.clientWidth + Math.max(favoriteStationCount,14)) * Math.PI);
-//	stationSize = ((radioWheelCircumference / Math.min(Math.max(favoriteStationCount,14),28)) - 2);
+	const radioWheelCircumference = ((radioWheel.clientWidth + Math.max(favoriteStationCount,(favoriteStationCountMin + 1))) * Math.PI);
 	
-	stationSize = ((radioWheelPadding * 2) * 0.110)
-	
+	stationSize = ((radioWheelPadding * 2) * stationSizeRatio / favoriteStationCountRatio)
 	document.documentElement.style.setProperty('--station-size',`${stationSize}px`);
-	/*
-	cLog('radioWheelCircumference',radioWheelCircumference);
-	cLog('stationSize',stationSize);
-	cLog('====================');
-	*/
-	const bottomAngle = (360 / radioStation.length * (stationFavoriteList.indexOf('Radio_Off') - 1 + (Math.max(favoriteStationCount, 14) / 4)));
+	
+	const bottomAngle = (360 / radioStation.length * (stationFavoriteList().indexOf('Radio_Off') - 1 + (Math.max(favoriteStationCount, (favoriteStationCountMin + 1)) / 4)));
 	
 	radioStation.forEach((station,index) => {
 		//SIZE
-		station.style.height = (stationSize + 'px');
-		station.style.width = (stationSize + 'px');
+		station.style.height = ('var(--station-size)');
+		station.style.width = ('var(--station-size)');
 		
 		//IMAGE
 		const logo = station.querySelector('.logo');
@@ -234,12 +321,16 @@ const radioWheelConfig = function (){
 		}
 		
 		//POSITION
-		const angleInDegrees = ((360 / radioStation.length * (stationFavoriteList.indexOf(station.id) - 1 + (Math.max(favoriteStationCount, 14) / 4))) - (bottomAngle - 90));
+		const angleInDegrees = ((360 / radioStation.length * (stationFavoriteList().indexOf(station.id) - 1 + (Math.max(favoriteStationCount, (favoriteStationCountMin + 1)) / 4))) - (bottomAngle - 90));
 		const angleInRadians = (angleInDegrees * (Math.PI / 180));
 		
 		station.style.left = `${(w / 2) + radioWheelPadding * Math.cos(angleInRadians) - (stationSize / 2) - ((w / 2) - radioWheelPadding)}px`;
 		station.style.top = `${(h / 2) + radioWheelPadding * Math.sin(angleInRadians) - (stationSize / 2) - ((h / 2) - radioWheelPadding)}px`;
 	});
+};
+
+const saveFavoriteStations = function() {
+	localStorage.setItem('favoriteStations', String(stationFavoriteList()));
 };
 
 const stationData = {
@@ -1602,17 +1693,64 @@ let stationData_share;
 let stationList = Object.keys(stationData);
 stationList.unshift('');
 
-const stationFavoriteList = stationList.filter((station) => {
-	if (station === '') {
-		return true
-	} else {
-		return stationData[station].favorite;
-	}
-});
+const stationFavoriteList = function (){
+	const sfl = stationList.filter((station) => {
+		if (station === '') {
+			return true
+		} else {
+			return stationData[station].favorite;
+		}
+	});
+	return sfl;
+};
 
 let stationSize = getComputedStyle(document.documentElement).getPropertyValue('--station-size').replace('px','');
 
+const toggleFullscreen = function (){
+	const enabled = (window.matchMedia('(display-mode: fullscreen)').matches || fullscreenIcon.classList.contains('active'));
+	let toggle;
+	if (!enabled) {
+		if (app.requestFullscreen) {
+			app.requestFullscreen();
+			toggle = true;
+		} else if (app.webkitRequestFullscreen) {
+			app.webkitRequestFullscreen();
+			toggle = true;
+		} else if (app.msRequestFullscreen) {
+			app.msRequestFullscreen();
+			toggle = true;
+		}
+		if (toggle) {
+			fullscreenIcon.classList.add('active');
+		}
+	} else {
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+			toggle = true;
+		} else if (document.webkitExitFullscreen) {
+			document.webkitExitFullscreen();
+			toggle = true;
+		} else if (document.msExitFullscreen) {
+			document.msExitFullscreen();
+			toggle = true;
+		}
+		if (toggle) {
+			fullscreenIcon.classList.remove('active');
+		}
+	}
+};
+
 window.addEventListener('load', () => {
+	loadYouTubeAPI();
+	
+	app = document.getElementById('app');
+	
+	iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	
+	if (iOS) {
+		document.documentElement.style.setProperty('--font-size',`${String(16 * 1.1)}px`);
+	}
+	
 	radioWheel = document.getElementById('radioWheel');
 	
 	stationData_name = document.querySelector('.stationData#name');
@@ -1636,6 +1774,8 @@ window.addEventListener('load', () => {
 		}
 	});
 	
+	loadFavoriteStations();
+	
 	radioWheelBuild();
 	
 	for (let i = 0; i <= 3; i++) {
@@ -1644,11 +1784,44 @@ window.addEventListener('load', () => {
 	
 	backgroundImage();
 	
-	loadYouTubeAPI();
+	preferencesMenu();
+	
+	menu = document.querySelector('.menu');
+	
+	interactionMenu = document.getElementById('interactionMenu');
+	interactionMenu.addEventListener('click', (e) => {
+		interactionMenu.classList.add('active');
+		
+		if (currentStation !== 'Radio_Off' && currentStation !== 'Self_Radio') {
+			document.querySelector(`.favorite.menuItem[data-favorite="${currentStation}"]`).classList.add('playingFavorite');
+		}
+		
+		menu.classList.add('active');
+		e.stopPropagation();
+	});
+	
+	app.addEventListener('click', (e) => {
+		if (!e.target.classList.contains('menuItem')) {
+			interactionMenu.classList.remove('active');
+			
+			if (document.querySelector('.playingFavorite')) {
+				document.querySelector('.playingFavorite').classList.remove('playingFavorite');
+			}
+			menu.classList.remove('active');
+		}
+	});
+	
+	fullscreenIcon = document.getElementById('fullscreenIcon');
+	enableFullscreen();
+	fullscreenIcon.addEventListener('click', toggleFullscreen);
 	
 	radioWheel.style.visibility = 'visible';
 	document.getElementById('stationData').style.visibility = 'visible';
 });
+
 window.addEventListener('resize', () => {
 	radioWheelConfig();
+	enableFullscreen();
+	
+	
 });
