@@ -25,7 +25,7 @@
 		<link href="icon/AppIcon.png" rel="icon" sizes="1024x1024" />
 		
 		<!-- CSS -->
-		<link type="text/css" rel="stylesheet" href="css/GTRV.css" />
+		<link type="text/css" rel="stylesheet" href="css/GTRV.css?v=202603310849" />
 	</head>
 	<body>
 		<div id="app">
@@ -39,8 +39,10 @@
 			<div id="stationData">
 				<div id="name" class="stationData">Radio Off</div>
 				<div id="artist" class="stationData">&nbsp;</div>
-				<div id="title" class="stationData">&nbsp;</div>
-				<div id="share" class="stationData">&nbsp;</div>
+				<div id="title" class="stationData"><span>&nbsp;</span></div>
+				<div id="share" class="stationData">
+					<input type="range" value="50" id="volumeSlider" />
+				</div>
 			</div>
 			<div id="fullscreenIcon" class="fullscreenIcon">
 				<div class="tl corner"></div>
@@ -52,6 +54,6 @@
 		</div>
 		
 		<!-- JAVASCRIPT -->
-		<script id="GTRV_js" type="text/javascript" src="js/GTRV.js"></script>
+		<script id="GTRV_js" type="text/javascript" src="js/GTRV.js?v=202604010842"></script>
 	</body>
 </html>
